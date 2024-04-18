@@ -3,7 +3,7 @@ import { v4 as uuid } from "uuid";
 import stockClassSchema from "../../ocf/schema/objects/StockClass.schema.json" assert { type: "json" };
 import { convertAndReflectStockClassOnchain, getStockClassById, getTotalNumberOfStockClasses } from "../controllers/stockClassController.js";
 import { createStockClass } from "../db/operations/create.js";
-import { readIssuerById } from "../db/operations/read.js";
+import { readIssuerById, readStockClassById } from "../db/operations/read.js";
 import validateInputAgainstOCF from "../utils/validateInputAgainstSchema.js";
 
 const stockClass = Router();
@@ -57,6 +57,11 @@ stockClass.post("/create", async (req, res) => {
             issuer: issuer._id,
         };
         await validateInputAgainstOCF(incomingStockClassToValidate, stockClassSchema);
+        console.log("stockClassId", data.id);
+        const exists = await readStockClassById(data.id);
+        if (exists._id) {
+            return res.status(200).send({ stockClass: exists });
+        }
         await convertAndReflectStockClassOnchain(contract, incomingStockClassForDB);
 
         const stockClass = await createStockClass(incomingStockClassForDB);
