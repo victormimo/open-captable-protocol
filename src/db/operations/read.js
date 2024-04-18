@@ -74,6 +74,14 @@ export const countVestingTerms = async () => {
     return await countDocuments(VestingTerms);
 };
 
+export const readStockIssuanceByCustomId = async (custom_id) => {
+    return await StockIssuance.find({ custom_id });
+};
+
+export const readConvertibleIssuanceByCustomId = async (custom_id) => {
+    return await StockIssuance.find({ custom_id });
+};
+
 export const getAllIssuerDataById = async (issuerId) => {
     const issuerStakeholders = await find(Stakeholder, { issuer: issuerId });
     const issuerStockClasses = await find(StockClass, { issuer: issuerId });
@@ -90,8 +98,8 @@ export const getAllIssuerDataById = async (issuerId) => {
 
 export const readAllIssuers = async () => {
     return await find(Issuer);
-}
+};
 
 export const readfactories = async () => {
     return await find(Factory);
-}
+};
