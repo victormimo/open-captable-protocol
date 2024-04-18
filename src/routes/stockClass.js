@@ -59,7 +59,7 @@ stockClass.post("/create", async (req, res) => {
         await validateInputAgainstOCF(incomingStockClassToValidate, stockClassSchema);
         console.log("stockClassId", data.id);
         const exists = await readStockClassById(data.id);
-        if (exists._id) {
+        if (exists && exists._id) {
             return res.status(200).send({ stockClass: exists });
         }
         await convertAndReflectStockClassOnchain(contract, incomingStockClassForDB);
