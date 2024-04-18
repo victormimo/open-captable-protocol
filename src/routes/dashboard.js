@@ -18,11 +18,11 @@ dashboard.get("/", async (req, res) => {
     const totalStockAmount = stockIssuances.reduce((acc, issuance) => acc + Number(issuance.quantity), 0);
     const convertibleIssuances = await find(ConvertibleIssuance, { issuer: issuerId });
     const totalConvertibleAmount = convertibleIssuances.reduce((acc, issuance) => acc + issuance.investment_amount.amount, 0);
-    const totalVested = totalStockAmount + totalConvertibleAmount;
+    const totalRaised = totalStockAmount + totalConvertibleAmount;
 
     res.status(200).send({
         numOfStakeholders,
-        totalVested,
+        totalRaised,
     });
 });
 
