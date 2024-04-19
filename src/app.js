@@ -21,6 +21,7 @@ import mongoose from "mongoose";
 import { readIssuerById } from "./db/operations/read.js";
 import { getIssuerContract } from "./utils/caches.ts";
 import { setupEnv } from "./utils/env.js";
+import dashboard from "./routes/dashboard.js";
 
 setupEnv();
 
@@ -61,6 +62,7 @@ app.use("/stock-plan", stockPlanRoutes);
 app.use("/valuation", valuationRoutes);
 app.use("/vesting-terms", vestingTermsRoutes);
 app.use("/historical-transactions", historicalTransactions);
+app.use("/dashboard", dashboard);
 
 // transactions
 app.use("/transactions/", contractMiddleware, transactionRoutes);

@@ -23,8 +23,9 @@ import { convertAndCreateRetractionStockOnchain } from "../controllers/transacti
 import { convertAndCreateTransferStockOnchain } from "../controllers/transactions/transferController.js";
 import { createConvertibleIssuance, createEquityCompensationIssuance } from "../db/operations/create.js";
 
-import { readIssuerById } from "../db/operations/read.js";
+import { readConvertibleIssuanceByCustomId, readIssuerById, readStockIssuanceByCustomId } from "../db/operations/read.js";
 import validateInputAgainstOCF from "../utils/validateInputAgainstSchema.js";
+import { StockIssuance } from "../chain-operations/structs.js";
 
 const transactions = Router();
 
@@ -42,8 +43,12 @@ transactions.post("/issuance/stock", async (req, res) => {
             object_type: "TX_STOCK_ISSUANCE",
             ...data,
         };
-
         await validateInputAgainstOCF(incomingStockIssuance, stockIssuanceSchema);
+
+        const stockExists = await readStockIssuanceByCustomId(data?.custom_id);
+        if (stockExists._id) {
+            return res.status(200).send({ stockIssuance: stockExists });
+        }
 
         await convertAndCreateIssuanceStockOnchain(contract, incomingStockIssuance);
 
@@ -314,8 +319,7 @@ transactions.post("/issuance/equity-compensation", async (req, res) => {
         console.error(error);
         res.status(500).send(`${error}`);
     }
-})
-
+});
 
 transactions.post("/issuance/convertible", async (req, res) => {
     const { issuerId, data } = req.body;
@@ -325,6 +329,7 @@ transactions.post("/issuance/convertible", async (req, res) => {
         await readIssuerById(issuerId);
 
         const incomingConvertibleIssuance = {
+            issuer: issuerId, // TEMPORARY: need to change when deployed on chain
             id: uuid(), // for OCF Validation
             security_id: uuid(), // for OCF Validation
             date: new Date().toISOString().slice(0, 10), // for OCF Validation
@@ -332,8 +337,15 @@ transactions.post("/issuance/convertible", async (req, res) => {
             ...data,
         };
 
-        console.log('incomingConvertibleIssuance', incomingConvertibleIssuance)
-        await validateInputAgainstOCF(incomingConvertibleIssuance, convertibleIssuanceSchema);
+        console.log("incomingConvertibleIssuance", incomingConvertibleIssuance);
+        // await validateInputAgainstOCF(incomingConvertibleIssuance, convertibleIssuanceSchema);
+
+        // check if it exists
+
+        const convertibleExists = await readConvertibleIssuanceByCustomId(data?.custom_id);
+        if (convertibleExists._id) {
+            return res.status(200).send({ convertibleIssuance: convertibleExists });
+        }
 
         // save to DB
         const createdIssuance = await createConvertibleIssuance(incomingConvertibleIssuance);
@@ -343,6 +355,6 @@ transactions.post("/issuance/convertible", async (req, res) => {
         console.error(error);
         res.status(500).send(`${error}`);
     }
-})
+});
 
 export default transactions;

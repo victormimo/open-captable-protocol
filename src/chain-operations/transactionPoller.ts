@@ -76,7 +76,7 @@ export const stopEventProcessing = async () => {
     }
 }
 
-export const pollingSleepTime = 10000;
+export const pollingSleepTime = 300000; // 5 mins
 
 export const startEventProcessing = async (finalizedOnly: boolean, dbConn) => {
     _keepProcessing = true;

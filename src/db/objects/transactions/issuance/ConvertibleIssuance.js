@@ -22,7 +22,7 @@ const ConvertibleIssuanceSchema = new mongoose.Schema({
         type: String,
         ref: "Issuer",
     },
-});
+}, { timestamps: true });
 
 const ConvertibleIssuance = mongoose.model("ConvertibleIssuance", ConvertibleIssuanceSchema);
 
