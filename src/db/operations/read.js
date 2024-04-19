@@ -7,6 +7,7 @@ import StockLegendTemplate from "../objects/StockLegendTemplate.js";
 import StockPlan from "../objects/StockPlan.js";
 import Valuation from "../objects/Valuation.js";
 import VestingTerms from "../objects/VestingTerms.js";
+import ConvertibleIssuance from "../objects/transactions/issuance/ConvertibleIssuance.js";
 import StockIssuance from "../objects/transactions/issuance/StockIssuance.js";
 import StockTransfer from "../objects/transactions/transfer/StockTransfer.js";
 import { countDocuments, find, findById, findOne } from "./atomic.ts";
@@ -83,7 +84,7 @@ export const readStockIssuanceByCustomId = async (custom_id) => {
 };
 
 export const readConvertibleIssuanceByCustomId = async (custom_id) => {
-    return await StockIssuance.find({ custom_id });
+    return await ConvertibleIssuance.find({ custom_id });
 };
 
 export const getAllIssuerDataById = async (issuerId) => {
