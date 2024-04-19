@@ -10,7 +10,7 @@ import {
 
 import stakeholderSchema from "../../ocf/schema/objects/Stakeholder.schema.json" assert { type: "json" };
 import { createStakeholder } from "../db/operations/create.js";
-import { readIssuerById } from "../db/operations/read.js";
+import { readIssuerById, readStakeholderById, readStakeholderByIssuerAssignedId } from "../db/operations/read.js";
 import validateInputAgainstOCF from "../utils/validateInputAgainstSchema.js";
 
 const stakeholder = Router();
@@ -66,6 +66,11 @@ stakeholder.post("/create", async (req, res) => {
         };
 
         await validateInputAgainstOCF(incomingStakeholderToValidate, stakeholderSchema);
+        console.log(`Checking if Stakeholder id: ${data.issuer_assigned_id} exists`);
+        const existingStakeholder = await readStakeholderByIssuerAssignedId(data.issuer_assigned_id);
+        if (existingStakeholder && existingStakeholder._id) {
+            return res.status(200).send({ stakeholder: existingStakeholder });
+        }
 
         await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB);
 
@@ -85,6 +90,7 @@ stakeholder.post("/add-wallet", async (req, res) => {
     const { id, wallet } = req.body;
 
     try {
+        // TODO: handle wallet already exists: maybe add a getter wallet from smart contract?
         await addWalletToStakeholder(contract, id, wallet);
         res.status(200).send("Success");
     } catch (error) {
