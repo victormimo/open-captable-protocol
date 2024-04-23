@@ -38,7 +38,7 @@ contract StockRetractionTest is CapTableTest {
         assertEq(lastRetraction.reason_text, retractionParams.reason_text);
 
         // Assert issuer and stock class shares_issued should both be zero
-        (, , uint256 issuerSharesIssued, ) = capTable.issuer();
+        (, uint256 issuerSharesIssued, ) = capTable.issuer();
         assertEq(issuerSharesIssued, 0);
 
         (, , , uint256 stockClassSharesIssued, ) = capTable.getStockClassById(stockClassId);

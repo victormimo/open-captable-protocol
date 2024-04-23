@@ -55,7 +55,7 @@ contract StockRepurchaseTest is CapTableTest {
         assertEq(repurchase.quantity, partialRepurchaseQuantity);
 
         // Assert issuer and stock class shares_issued
-        (, , uint256 issuerSharesIssued, ) = capTable.issuer();
+        (, uint256 issuerSharesIssued, ) = capTable.issuer();
         assertEq(issuerSharesIssued, issuanceQuantity - partialRepurchaseQuantity);
 
         (, , , uint256 stockClassSharesIssued, ) = capTable.getStockClassById(stockClassId);
@@ -104,7 +104,7 @@ contract StockRepurchaseTest is CapTableTest {
         assertEq(repurchase.price, repurchasePrice);
 
         // Assert issuer and stock class shares_issued
-        (, , uint256 issuerSharesIssued, ) = capTable.issuer();
+        (, uint256 issuerSharesIssued, ) = capTable.issuer();
         assertEq(issuerSharesIssued, issuance.params.quantity - repurchaseIssuance.params.quantity);
     }
 }

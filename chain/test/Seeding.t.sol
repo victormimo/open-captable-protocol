@@ -32,7 +32,7 @@ contract SeedingTest is CapTableTest {
 
         capTable.seedSharesAuthorizedAndIssued(params);
 
-        (, , uint256 actualIssuerSharesIssued, uint256 actualIssuerSharesAuthorized) = capTable.issuer();
+        (, uint256 actualIssuerSharesIssued, uint256 actualIssuerSharesAuthorized) = capTable.issuer();
         (, , , uint256 scSharesIssued, uint256 scSharesAuthorized) = capTable.getStockClassById(stockClassId);
 
         assertEq(actualIssuerSharesAuthorized, expectedIssuerSharesAuthorized);
