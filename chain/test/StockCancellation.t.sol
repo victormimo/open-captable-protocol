@@ -128,7 +128,7 @@ contract StockCancellationTest is CapTableTest {
         assertEq(cancellation.quantity, partialCancellationQuantity);
 
         // Assert issuer and stock class shares_issued
-        (, , uint256 issuerSharesIssued, ) = capTable.issuer();
+        (, uint256 issuerSharesIssued, ) = capTable.issuer();
         assertEq(issuerSharesIssued, firstIssuance.params.quantity - partialCancellationQuantity);
 
         (, , , uint256 stockClassSharesIssued, ) = capTable.getStockClassById(stockClassId);

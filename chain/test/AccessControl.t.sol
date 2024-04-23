@@ -8,9 +8,8 @@ contract RolesTests is CapTableTest {
     address OPERATOR_ADDR = address(0xf002);
 
     function testIssuerInitialization() public {
-        (bytes16 id, string memory legalName, , ) = capTable.issuer();
+        (bytes16 id,  , ) = capTable.issuer();
         assertEq(id, issuerId);
-        assertEq(legalName, "Winston, Inc.");
     }
 
     function testOperatorTransfer() public {

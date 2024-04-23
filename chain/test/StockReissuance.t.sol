@@ -25,7 +25,7 @@ contract StockReissuanceTest is CapTableTest {
         bytes memory issuanceToReissue = capTable.transactions(capTable.getTransactionsCount() - 2);
         StockIssuance memory issuanceToDelete = abi.decode(issuanceToReissue, (StockIssuance));
 
-        (, , uint256 issuerSharesIssuedBefore, ) = capTable.issuer();
+        (, uint256 issuerSharesIssuedBefore, ) = capTable.issuer();
 
         uint256 totalSharesIssued = issuanceQuantity * 2;
 
@@ -54,7 +54,7 @@ contract StockReissuanceTest is CapTableTest {
         assertEq(reissuance.object_type, "TX_STOCK_REISSUANCE");
 
         // Assert that the issuer shares issued is 1000 after reissuance, since it was 2000 initially
-        (, , uint256 issuerSharesIssuedAfter, ) = capTable.issuer();
+        (, uint256 issuerSharesIssuedAfter, ) = capTable.issuer();
         assertEq(issuerSharesIssuedAfter, issuanceQuantity);
     }
 

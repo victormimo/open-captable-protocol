@@ -6,7 +6,6 @@ pragma solidity ^0.8.20;
 
 struct Issuer {
     bytes16 id;
-    string legal_name;
     uint256 shares_issued;
     uint256 shares_authorized;
 }

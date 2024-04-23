@@ -24,18 +24,16 @@ contract CapTableFactoryTest is Test {
 
     function testCreateCapTable() public {
         bytes16 issuerId = 0xd3373e0a4dd9430f8a563281f2800e1e;
-        string memory issuerName = "Winston, Inc.";
         uint256 issuerInitialSharesAuthorized = 1000000;
 
-        address capTableProxy = _capTableFactory.createCapTable(issuerId, issuerName, issuerInitialSharesAuthorized);
+        address capTableProxy = _capTableFactory.createCapTable(issuerId, issuerInitialSharesAuthorized);
 
         // Assert the cap table was created
         CapTable capTable = CapTable(capTableProxy);
 
-        (bytes16 id, string memory name, uint256 shares_issued, uint256 initial_shares_authorized) = capTable.issuer();
+        (bytes16 id, uint256 shares_issued, uint256 initial_shares_authorized) = capTable.issuer();
 
         assertEq(id, issuerId);
-        assertEq(name, issuerName);
         assertEq(shares_issued, 0);
         assertEq(initial_shares_authorized, issuerInitialSharesAuthorized);
 
@@ -63,10 +61,9 @@ contract CapTableFactoryTest is Test {
     function testUpdateCapTableImplementation() public {
         // Create cap table prior to upgrade
         bytes16 issuerId0 = 0xd3373e0a4dd9430f8a563281f2800333;
-        string memory issuerName0 = "Alpha, Inc.";
         uint256 issuerInitialSharesAuthorized0 = 1000000;
 
-        address capTableProxy0 = _capTableFactory.createCapTable(issuerId0, issuerName0, issuerInitialSharesAuthorized0);
+        address capTableProxy0 = _capTableFactory.createCapTable(issuerId0, issuerInitialSharesAuthorized0);
 
         // Assert the cap table was created
         CapTable capTable0 = CapTable(capTableProxy0);
@@ -83,18 +80,16 @@ contract CapTableFactoryTest is Test {
 
         // Create a cap table
         bytes16 issuerId = 0xd3373e0a4dd9430f8a563281f2800e1e;
-        string memory issuerName = "Winston, Inc.";
         uint256 issuerInitialSharesAuthorized = 1000000;
 
-        address capTableProxy = _capTableFactory.createCapTable(issuerId, issuerName, issuerInitialSharesAuthorized);
+        address capTableProxy = _capTableFactory.createCapTable(issuerId, issuerInitialSharesAuthorized);
 
         // Assert the cap table was created
         CapTable capTable = CapTable(capTableProxy);
 
-        (bytes16 id, string memory name, uint256 shares_issued, uint256 initial_shares_authorized) = capTable.issuer();
+        (bytes16 id, uint256 shares_issued, uint256 initial_shares_authorized) = capTable.issuer();
 
         assertEq(id, issuerId);
-        assertEq(name, issuerName);
         assertEq(shares_issued, 0);
         assertEq(initial_shares_authorized, issuerInitialSharesAuthorized);
 

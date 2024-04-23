@@ -51,7 +51,7 @@ contract StockTransferTest is CapTableTest {
         assertEq(secondTransfer.quantity, 500);
         assertEq(secondTransfer.balance_security_id, remainingIssuanceSecurityId);
 
-        (, , uint256 shares_issued, ) = capTable.issuer();
+        (, uint256 shares_issued, ) = capTable.issuer();
 
         // shares issued should not have changed.
         assertEq(shares_issued, totalIssued);
