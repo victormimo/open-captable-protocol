@@ -22,6 +22,7 @@ import { readIssuerById } from "./db/operations/read.js";
 import { getIssuerContract } from "./utils/caches.ts";
 import { setupEnv } from "./utils/env.js";
 import dashboard from "./routes/dashboard.js";
+import exportRoutes from "./routes/export.js";
 
 setupEnv();
 
@@ -63,6 +64,7 @@ app.use("/valuation", valuationRoutes);
 app.use("/vesting-terms", vestingTermsRoutes);
 app.use("/historical-transactions", historicalTransactions);
 app.use("/dashboard", dashboard);
+app.use("/export", exportRoutes);
 
 // transactions
 app.use("/transactions/", contractMiddleware, transactionRoutes);
