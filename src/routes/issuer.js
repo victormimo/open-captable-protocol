@@ -58,7 +58,6 @@ issuer.post("/create", async (req, res) => {
         console.log("💾 | Issuer id in bytes16 ", issuerIdBytes16);
         const { address, deployHash } = await deployCapTable(
             issuerIdBytes16,
-            incomingIssuerToValidate.legal_name,
             incomingIssuerToValidate.initial_shares_authorized
         );
 
