@@ -9,8 +9,8 @@ COPY . .
 
 # Install dependencies and setup
 RUN yarn install
+RUN git submodule update --init --recursive
 
 EXPOSE 8080
 # Specify the command to run on container start
-CMD ["npx", "ts-node", "src/server.js"]
-
+CMD ["npx", "tsx", "src/server.js", "--finalized-only"]
