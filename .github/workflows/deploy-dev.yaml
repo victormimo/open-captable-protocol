@@ -41,7 +41,7 @@ jobs:
             docker stop ocp-dev || true
             docker rm ocp-dev || true
             docker run --name ocp-dev -d -p 8080:8080 \
-              -e NODE_ENV=development \
+              -e NODE_ENV='development' \
               -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
               -e RPC_URL="${{ secrets.RPC_URL }}" \
               -e CHAIN_ID="${{ secrets.CHAIN_ID }}" \
