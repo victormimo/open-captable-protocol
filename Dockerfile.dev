@@ -6,10 +6,12 @@ WORKDIR /app
 
 # COPY ./chain/out ./chain/out
 COPY . .
+curl -L https://foundry.paradigm.xyz | bash
 
 # Install dependencies and setup
 RUN yarn install
 RUN git submodule update --init --recursive
+yarn setup
 
 EXPOSE 8080
 # Specify the command to run on container start
