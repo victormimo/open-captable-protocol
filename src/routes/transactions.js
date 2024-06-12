@@ -309,7 +309,7 @@ transactions.post("/issuance/equity-compensation", async (req, res) => {
             object_type: "TX_EQUITY_COMPENSATION_ISSUANCE",
             ...data,
         };
-        await validateInputAgainstOCF(incomingEquityCompensationIssuance, equityCompensationIssuanceSchema);
+        //  await validateInputAgainstOCF(incomingEquityCompensationIssuance, equityCompensationIssuanceSchema);
 
         // save to DB
         const createdIssuance = await createEquityCompensationIssuance(incomingEquityCompensationIssuance);
