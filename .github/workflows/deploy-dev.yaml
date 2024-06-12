@@ -3,16 +3,16 @@ name: Deploy to AWS Lightsail Dev Instance
 on:
   push:
     branches:
-      - dev  
+      - dev
 
 jobs:
   build-and-deploy:
-    environment: dev 
+    environment: dev
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -41,12 +41,12 @@ jobs:
             docker stop ocp-dev || true
             docker rm ocp-dev || true
             docker run --name ocp-dev -d -p 8080:8080 \
-              -e NODE_ENV='development' \
-              -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
-              -e RPC_URL="${{ secrets.RPC_URL }}" \
-              -e CHAIN_ID="${{ secrets.CHAIN_ID }}" \
-              -e PORT=8080 \
-              -e PRIVATE_KEY="${{ secrets.PRIVATE_KEY }}" \
-              -e ETHERSCAN_L2_API_KEY="${{ secrets.ETHERSCAN_L2_API_KEY }}" \
-              -v /home/ubuntu/global-bundle.pem:/global-bundle.pem \
-              009755999482.dkr.ecr.us-east-2.amazonaws.com/ocp:dev
+            -e NODE_ENV='development' \
+            -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+            -e RPC_URL="${{ secrets.RPC_URL }}" \
+            -e CHAIN_ID="${{ secrets.CHAIN_ID }}" \
+            -e PORT=8080 \
+            -e PRIVATE_KEY="${{ secrets.PRIVATE_KEY }}" \
+            -e ETHERSCAN_L2_API_KEY="${{ secrets.ETHERSCAN_L2_API_KEY }}" \
+            -v "/home/ubuntu/global-bundle.pem:/global-bundle.pem" \
+            009755999482.dkr.ecr.us-east-2.amazonaws.com/ocp:dev
