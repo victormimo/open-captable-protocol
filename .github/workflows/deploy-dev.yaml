@@ -37,6 +37,7 @@ jobs:
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin 009755999482.dkr.ecr.us-east-2.amazonaws.com
             docker pull 009755999482.dkr.ecr.us-east-2.amazonaws.com/ocp:dev
             docker stop ocp-dev || true
             docker rm ocp-dev || true
