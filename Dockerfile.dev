@@ -1,18 +1,40 @@
-# Use the official node image as a parent image
+# Stage 1: Build artifacts using Foundry
+FROM --platform=linux/amd64 ghcr.io/foundry-rs/foundry:latest AS foundry-build
+
+# Set the working directory
+WORKDIR /chain
+
+# Copy the chain directory
+COPY ./chain .
+
+# Build the artifacts
+RUN forge build
+
+# Stage 2: Node.js application
 FROM node:18
 
 # Set the working directory
 WORKDIR /app
 
-# COPY ./chain/out ./chain/out
-COPY . .
-curl -L https://foundry.paradigm.xyz | bash
+# Copy package.json and yarn.lock first to take advantage of Docker's cache
+COPY package.json yarn.lock ./
 
-# Install dependencies and setup
+# Install dependencies
 RUN yarn install
-RUN git submodule update --init --recursive
-yarn setup
 
+# Copy the rest of the application files
+COPY . .
+
+# Copy the built artifacts from the Foundry stage
+COPY --from=foundry-build /chain/out /app/chain/out
+
+# Ensure submodules are initialized and updated
+RUN git submodule sync && \
+    git submodule update --init --recursive || \
+    echo "Failed to update submodules. Please check submodule paths."
+
+# Expose the desired port
 EXPOSE 8080
+
 # Specify the command to run on container start
 CMD ["yarn", "dev"]
