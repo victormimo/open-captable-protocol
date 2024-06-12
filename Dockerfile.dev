@@ -1,6 +1,11 @@
 # Stage 1: Build artifacts using Foundry
 FROM --platform=linux/amd64 ghcr.io/foundry-rs/foundry:latest AS foundry-build
 
+# Ensure submodules are initialized and updated
+RUN git submodule sync && \
+    git submodule update --init --recursive || \
+    echo "Failed to update submodules. Please check submodule paths."
+
 # Set the working directory
 WORKDIR /chain
 
@@ -28,10 +33,6 @@ COPY . .
 # Copy the built artifacts from the Foundry stage
 COPY --from=foundry-build /chain/out /app/chain/out
 
-# Ensure submodules are initialized and updated
-RUN git submodule sync && \
-    git submodule update --init --recursive || \
-    echo "Failed to update submodules. Please check submodule paths."
 
 # Expose the desired port
 EXPOSE 8080
