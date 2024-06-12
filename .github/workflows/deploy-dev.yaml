@@ -16,6 +16,11 @@ jobs:
           submodules: true  # Ensure submodules are checked out
           fetch-depth: 0  # Ensure the .git directory is available
 
+      - name: Print Directory Structure
+        run: |
+          ls -al
+          ls -al ./chain
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
