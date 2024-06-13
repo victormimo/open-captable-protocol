@@ -12,6 +12,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          submodules: true  # Ensure submodules are checked out
+          fetch-depth: 0  # Ensure the .git directory is available
+          
+      - name: Create .env file
+        run: touch .env
+
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
