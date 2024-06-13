@@ -75,7 +75,9 @@ export const startServer = async (finalizedOnly) => {
     */
 
     // Connect to MongoDB
+    console.log("Connecting to MongoDB...");
     const dbConn = await connectDB();
+    console.log("Connected to MongoDB");
 
     const server = app
         .listen(PORT, async () => {
