@@ -15,11 +15,9 @@ jobs:
         with:
           submodules: true  # Ensure submodules are checked out
           fetch-depth: 0  # Ensure the .git directory is available
+          
       - name: Create .env file
         run: touch .env
-
-      - name: Show .env file content
-        run:  cat .env 
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
