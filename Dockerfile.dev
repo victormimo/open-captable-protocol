@@ -4,12 +4,10 @@ FROM node:18
 # Set the working directory
 WORKDIR /app
 
-# COPY ./chain/out ./chain/out
 COPY . .
 
 # Install dependencies and setup
 RUN yarn install
-# RUN git submodule update --init --recursive
 
 EXPOSE 8080
 # Specify the command to run on container start
