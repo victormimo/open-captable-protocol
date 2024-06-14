@@ -62,7 +62,7 @@ stockClass.post("/create", async (req, res) => {
         if (exists && exists._id) {
             return res.status(200).send({ stockClass: exists });
         }
-        await convertAndReflectStockClassOnchain(contract, incomingStockClassForDB);
+        // await convertAndReflectStockClassOnchain(contract, incomingStockClassForDB);
 
         const stockClass = await createStockClass(incomingStockClassForDB);
 
