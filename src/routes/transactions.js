@@ -50,7 +50,7 @@ transactions.post("/issuance/stock", async (req, res) => {
             return res.status(200).send({ stockIssuance: stockExists });
         }
 
-        // await convertAndCreateIssuanceStockOnchain(contract, incomingStockIssuance);
+        await convertAndCreateIssuanceStockOnchain(contract, incomingStockIssuance);
 
         res.status(200).send({ stockIssuance: incomingStockIssuance });
     } catch (error) {

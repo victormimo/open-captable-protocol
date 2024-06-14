@@ -72,7 +72,7 @@ stakeholder.post("/create", async (req, res) => {
             return res.status(200).send({ stakeholder: existingStakeholder });
         }
 
-        // await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB);
+        await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB);
 
         const stakeholder = await createStakeholder(incomingStakeholderForDB);
 
