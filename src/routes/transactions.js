@@ -59,6 +59,40 @@ transactions.post("/issuance/stock", async (req, res) => {
     }
 });
 
+transactions.post("/issuance/stock_fairmint_reflection", async (req, res) => {
+    const { contract } = req;
+    const { issuerId, data } = req.body;
+
+    /*
+    We need new information to pass to Fairmint, like series name
+    */
+
+    try {
+        const issuer = await readIssuerById(issuerId);
+
+        const incomingStockIssuance = {
+            id: uuid(), // for OCF Validation
+            security_id: uuid(), // for OCF Validation
+            date: new Date().toISOString().slice(0, 10), // for OCF Validation
+            object_type: "TX_STOCK_ISSUANCE",
+            ...data,
+        };
+        await validateInputAgainstOCF(incomingStockIssuance, stockIssuanceSchema);
+
+        const stockExists = await readStockIssuanceByCustomId(data?.custom_id);
+        if (stockExists._id) {
+            return res.status(200).send({ stockIssuance: stockExists });
+        }
+
+        await convertAndCreateIssuanceStockOnchain(contract, incomingStockIssuance);
+
+        res.status(200).send({ stockIssuance: incomingStockIssuance });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send(`${error}`);
+    }
+});
+
 transactions.post("/transfer/stock", async (req, res) => {
     const { contract } = req;
     const { issuerId, data } = req.body;
