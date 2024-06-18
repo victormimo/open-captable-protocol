@@ -28,6 +28,7 @@ const options = {
 export const handleStockIssuance = async (stock, issuerId, timestamp) => {
     const { id, object_type, security_id, params } = stock;
     console.log("StockIssuanceCreated Event Emitted!", id);
+    const webHookSync = false; // TODO: grab the flag
     const {
         stock_class_id,
         stock_plan_id,
@@ -99,6 +100,21 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         transactionType: "StockIssuance",
     });
 
+    // TODO confitionally call webhook
+    if (webHookSync) {
+        console.log("Webhook Sync is enabled, calling webhook");
+        // call webhook
+        const webHookUrl = "https://api-series-dev.fairmint.co/admin/ocpHook";
+        const resp = await axios.post(webHookUrl, {
+            action: "CREATE_STOCK_ISSUANCE",
+            ...stakeholder,
+            ...stockClass,
+            ...createdStockIssuance,
+        });
+        console.log("Synced with webhook");
+        console.log({ resp });
+    }
+
     console.log(
         `✅ | StockIssuance confirmation onchain with date ${new Date(Date.now()).toLocaleDateString("en-US", options)}`,
         createdStockIssuance
@@ -141,6 +157,7 @@ export const handleStakeholder = async (id) => {
     console.log("StakeholderCreated Event Emitted!", id);
     const incomingStakeholderId = convertBytes16ToUUID(id);
     const stakeholder = await updateStakeholderById(incomingStakeholderId, { is_onchain_synced: true });
+
     console.log("✅ | Stakeholder confirmation onchain ", stakeholder);
 };
 
