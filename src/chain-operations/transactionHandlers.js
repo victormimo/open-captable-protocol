@@ -1,6 +1,6 @@
 import { convertBytes16ToUUID } from "../utils/convertUUID.js";
 import { createHistoricalTransaction } from "../db/operations/create.js";
-import { readStakeholderById } from "../db/operations/read.js";
+import { readFairmintDataByCustomId, readStakeholderById } from "../db/operations/read.js";
 import {
     updateStakeholderById,
     updateStockClassById,
@@ -14,6 +14,7 @@ import {
     upsertStockClassAuthorizedSharesAdjustment,
     upsertIssuerAuthorizedSharesAdjustment,
 } from "../db/operations/update.js";
+import { API_URL } from "./utils.js";
 
 import { toDecimal } from "../utils/convertToFixedPointDecimals.js";
 
@@ -28,7 +29,7 @@ const options = {
 export const handleStockIssuance = async (stock, issuerId, timestamp) => {
     const { id, object_type, security_id, params } = stock;
     console.log("StockIssuanceCreated Event Emitted!", id);
-    const webHookSync = false; // TODO: grab the flag
+
     const {
         stock_class_id,
         stock_plan_id,
@@ -47,6 +48,11 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         consideration_text,
         security_law_exemptions,
     } = params;
+
+    const _custom_id = convertBytes16ToUUID(custom_id);
+
+    const fairmintData = readFairmintDataByCustomId(_custom_id);
+
     const sharePriceOCF = {
         amount: toDecimal(share_price).toString(),
         currency: "USD",
@@ -63,6 +69,7 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
     ];
 
     const stakeholder = await readStakeholderById(convertBytes16ToUUID(stakeholder_id));
+
     if (!stakeholder) {
         throw Error("Stakeholder does not exist");
     }
@@ -83,7 +90,7 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         comments: comments,
         security_id: convertBytes16ToUUID(security_id),
         date: dateOCF,
-        custom_id, // Not UUID
+        custom_id: _custom_id,
         stakeholder_id: stakeholder._id,
         board_approval_date,
         stockholder_approval_date,
@@ -100,19 +107,19 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         transactionType: "StockIssuance",
     });
 
-    // TODO confitionally call webhook
-    if (webHookSync) {
-        console.log("Webhook Sync is enabled, calling webhook");
-        // call webhook
-        const webHookUrl = "https://api-series-dev.fairmint.co/admin/ocpHook";
+    if (fairmintData) {
+        console.log("Reflecting Stock Issuance into fairmint...");
+        console.log("issuerId: ", issuerId);
+        const webHookUrl = `${API_URL}/ocp/reflectInvestment?portalId=${issuerId}`;
         const resp = await axios.post(webHookUrl, {
-            action: "CREATE_STOCK_ISSUANCE",
-            ...stakeholder,
-            ...stockClass,
-            ...createdStockIssuance,
+            series_name: get(fairmintData, "attributes.series_name"),
+            stakeholder_id: stakeholder._id,
+            custom_id: _custom_id,
+            amount: toDecimal(share_price).toString(),
+            number_of_shares: toDecimal(quantity).toString(),
         });
-        console.log("Synced with webhook");
-        console.log({ resp });
+        console.log("Successfully reflected Stock Issuance on Fairmint");
+        console.log("Fairmint response:", resp.data);
     }
 
     console.log(
@@ -157,6 +164,35 @@ export const handleStakeholder = async (id) => {
     console.log("StakeholderCreated Event Emitted!", id);
     const incomingStakeholderId = convertBytes16ToUUID(id);
     const stakeholder = await updateStakeholderById(incomingStakeholderId, { is_onchain_synced: true });
+
+    const fairmintData = readFairmintDataByCustomId(stakeholder.issuer_assigned_id);
+
+    const issuerId = stakeholder.issuer.id;
+    console.log("issuerId", issuerId);
+
+    if (fairmintData) {
+        console.log("Creating Series in fairmint...");
+        const reflectSeriesResponse = await axios.post(`${API_URL}/ocp/reflectSeries?portalId=${issuerId}`, {
+            stakeholder_id: stakeholder._id,
+            series_name: get(fairmintData, "attributes.series_name"),
+            // TODO: where can we get this from?
+            stock_class_id: get(fairmintData, "attributes.stock_class_id"),
+            stock_plan_id: get(fairmintData, "attributes.stock_plan_id"),
+        });
+        console.log("Successfully reflected Series into Fairmint");
+        console.log("Fairmint response:", reflectSeriesResponse.data);
+
+        console.log("Reflecting Stakeholder into fairmint...");
+        const webHookUrl = `${API_URL}/ocp/reflectStakeholder?portalId=${issuerId}`;
+        const resp = await axios.post(webHookUrl, {
+            name: get(stakeholder, "name.legal_name"),
+            stakeholder_id: stakeholder._id,
+            custom_id: fairmintData.custom_id,
+            email: get(stakeholder, "email"),
+        });
+        console.log(`Successfully reflected Stakeholder ${stakeholder._id} into Fairmint webhook`);
+        console.log("Fairmint response:", resp.data);
+    }
 
     console.log("✅ | Stakeholder confirmation onchain ", stakeholder);
 };

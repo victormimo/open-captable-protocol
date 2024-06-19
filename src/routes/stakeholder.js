@@ -85,6 +85,67 @@ stakeholder.post("/create", async (req, res) => {
     }
 });
 
+/// @dev: stakeholder is always created onchain, then to the DB
+stakeholder.post("/create-fairmint-reflection", async (req, res) => {
+    const { contract } = req;
+    const { data, issuerId } = req.body;
+
+    try {
+        const issuer = await readIssuerById(issuerId);
+
+        const schema = Joi.object({
+            series_name: Joi.string().required(),
+            issuer_assigned_id: Joi.string().required(),
+        });
+
+        const { error, value: payload } = schema.validate(data);
+
+        if (error) {
+            req.status(400).send({
+                error: getJoiErrorMessage(error),
+            });
+        }
+
+        // OCF doesn't allow extra fields in their validation
+        const incomingStakeholderToValidate = {
+            id: uuid(),
+            object_type: "STAKEHOLDER",
+            ...data,
+        };
+
+        const incomingStakeholderForDB = {
+            ...incomingStakeholderToValidate,
+            issuer: issuer._id,
+            issuer_assigned_id: custom_id,
+        };
+
+        await validateInputAgainstOCF(incomingStakeholderToValidate, stakeholderSchema);
+
+        console.log(`Checking if Stakeholder id: ${data.issuer_assigned_id} exists`);
+        const existingStakeholder = await readStakeholderByIssuerAssignedId(data.issuer_assigned_id);
+
+        if (existingStakeholder && existingStakeholder._id) {
+            return res.status(200).send({ stakeholder: existingStakeholder });
+        }
+
+        await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB);
+        await createFairmintData({
+            custom_id,
+            attributes: {
+                series_name,
+            },
+        });
+
+        const stakeholder = await createStakeholder(incomingStakeholderForDB);
+
+        console.log("✅ | Stakeholder created offchain:", stakeholder);
+
+        res.status(200).send({ stakeholder });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send(`${error}`);
+    }
+});
 stakeholder.post("/add-wallet", async (req, res) => {
     const { contract } = req;
     const { id, wallet } = req.body;
