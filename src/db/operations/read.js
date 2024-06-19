@@ -1,5 +1,6 @@
 import Factory from "../objects/Factory.js";
 import HistoricalTransaction from "../objects/HistoricalTransaction.js";
+import Fairmint from "../objects/Fairmint.js";
 import Issuer from "../objects/Issuer.js";
 import Stakeholder from "../objects/Stakeholder.js";
 import StockClass from "../objects/StockClass.js";
@@ -107,4 +108,8 @@ export const readAllIssuers = async () => {
 
 export const readfactories = async () => {
     return await find(Factory);
+};
+
+export const readFairmintDataByCustomId = async (custom_id) => {
+    return await Fairmint.find({ custom_id });
 };
