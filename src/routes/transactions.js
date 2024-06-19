@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { v4 as uuid } from "uuid";
+import Joi from "joi";
 
 import stockAcceptanceSchema from "../../ocf/schema/objects/transactions/acceptance/StockAcceptance.schema.json" assert { type: "json" };
 import issuerAuthorizedSharesAdjustmentSchema from "../../ocf/schema/objects/transactions/adjustment/IssuerAuthorizedSharesAdjustment.schema.json" assert { type: "json" };
@@ -27,6 +28,7 @@ import { readConvertibleIssuanceByCustomId, readIssuerById, readStockIssuanceByC
 import validateInputAgainstOCF from "../utils/validateInputAgainstSchema.js";
 import { StockIssuance } from "../chain-operations/structs.js";
 import { createFairmintData } from "../db/operations/create.js";
+import { getJoiErrorMessage } from "../chain-operations/utils.js";
 
 const transactions = Router();
 
@@ -67,11 +69,21 @@ transactions.post("/issuance/stock_fairmint_reflection", async (req, res) => {
     /*
     We need new information to pass to Fairmint, like series name
     */
+    const schema = Joi.object({
+        custom_id: Joi.string().uuid().required(),
+        series_name: Joi.string().required(),
+    });
 
+    const { error, value: payload } = schema.validate(data);
+
+    if (error) {
+        req.status(400).send({
+            error: getJoiErrorMessage(error),
+        });
+    }
+
+    const { custom_id, series_name } = payload;
     try {
-        const issuer = await readIssuerById(issuerId);
-        const custom_id = uuid();
-
         const incomingStockIssuance = {
             id: uuid(), // for OCF Validation
             security_id: uuid(), // for OCF Validation
@@ -83,8 +95,9 @@ transactions.post("/issuance/stock_fairmint_reflection", async (req, res) => {
         await validateInputAgainstOCF(incomingStockIssuance, stockIssuanceSchema);
 
         const stockExists = await readStockIssuanceByCustomId(data?.custom_id);
+
         if (stockExists._id) {
-            return res.status(200).send({ stockIssuance: stockExists });
+            return res.status(409).send({ stockIssuance: stockExists });
         }
 
         // new db object for fairmint data
@@ -92,7 +105,7 @@ transactions.post("/issuance/stock_fairmint_reflection", async (req, res) => {
         await createFairmintData({
             custom_id,
             attributes: {
-                series_name: data.seriesName,
+                series_name,
             },
         });
 
