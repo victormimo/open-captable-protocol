@@ -51,9 +51,7 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         consideration_text,
         security_law_exemptions,
     } = params;
-    console.log("original custom_id", custom_id);
     const _custom_id = convertBytes16ToUUID(custom_id);
-    console.log("converted custom_id", _custom_id);
     const fairmintData = readFairmintDataById(_custom_id);
 
     const sharePriceOCF = {
