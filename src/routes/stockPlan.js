@@ -4,6 +4,7 @@ import stockPlanSchema from "../../ocf/schema/objects/StockPlan.schema.json" ass
 import { createStockPlan } from "../db/operations/create.js";
 import { countStockPlans, readIssuerById, readStockPlanById } from "../db/operations/read.js";
 import validateInputAgainstOCF from "../utils/validateInputAgainstSchema.js";
+import { upsertFairmintObjectByCustomId } from "../db/operations/update.js";
 
 const stockPlan = Router();
 
@@ -52,6 +53,47 @@ stockPlan.post("/create", async (req, res) => {
 
         await validateInputAgainstOCF(incomingStockPlanToValidate, stockPlanSchema);
         const stockPlan = await createStockPlan(incomingStockPlanForDB);
+
+        console.log("✅ | Created Stock Plan in DB: ", stockPlan);
+
+        res.status(200).send({ stockPlan });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send(`${error}`);
+    }
+});
+
+/// @dev: stock plan is currently only created offchain
+stockPlan.post("/create-fairmint-reflection", async (req, res) => {
+    try {
+        const { custom_id, data, issuerId } = req.body;
+
+        if (!custom_id) {
+            return res.status(400).send({ error: "custom_id is required" });
+        }
+
+        const issuer = await readIssuerById(issuerId);
+
+        const incomingStockPlanToValidate = {
+            id: uuid(),
+            object_type: "STOCK_PLAN",
+            ...data,
+        };
+
+        const incomingStockPlanForDB = {
+            ...incomingStockPlanToValidate,
+            issuer: issuer._id,
+        };
+
+        await validateInputAgainstOCF(incomingStockPlanToValidate, stockPlanSchema);
+        const stockPlan = await createStockPlan(incomingStockPlanForDB);
+
+        await upsertFairmintObjectByCustomId(custom_id, {
+            custom_id: custom_id,
+            attributes: {
+                stock_plan_id: stockPlan.id,
+            },
+        });
 
         console.log("✅ | Created Stock Plan in DB: ", stockPlan);
 
