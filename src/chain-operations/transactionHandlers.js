@@ -17,6 +17,7 @@ import {
 import { API_URL } from "./utils.js";
 
 import { toDecimal } from "../utils/convertToFixedPointDecimals.js";
+import { SERIES_TYPE } from "../fairmint/enums.js";
 
 const options = {
     year: "numeric",
@@ -117,6 +118,7 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
             custom_id: _custom_id,
             amount: toDecimal(share_price).toString(),
             number_of_shares: toDecimal(quantity).toString(),
+            series_type: SERIES_TYPE.SHARES,
         });
         console.log("Successfully reflected Stock Issuance on Fairmint");
         console.log("Fairmint response:", resp.data);
@@ -175,7 +177,6 @@ export const handleStakeholder = async (id) => {
         const reflectSeriesResponse = await axios.post(`${API_URL}/ocp/reflectSeries?portalId=${issuerId}`, {
             stakeholder_id: stakeholder._id,
             series_name: get(fairmintData, "attributes.series_name"),
-            // TODO: where can we get this from?
             stock_class_id: get(fairmintData, "attributes.stock_class_id"),
             stock_plan_id: get(fairmintData, "attributes.stock_plan_id"),
         });
