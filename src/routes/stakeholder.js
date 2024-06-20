@@ -12,6 +12,8 @@ import stakeholderSchema from "../../ocf/schema/objects/Stakeholder.schema.json"
 import { createStakeholder } from "../db/operations/create.js";
 import { readIssuerById, readStakeholderById, readStakeholderByIssuerAssignedId } from "../db/operations/read.js";
 import validateInputAgainstOCF from "../utils/validateInputAgainstSchema.js";
+import Joi from "joi";
+import { upsertFairmintObjectByCustomId } from "../db/operations/update.js";
 
 const stakeholder = Router();
 
@@ -86,6 +88,7 @@ stakeholder.post("/create", async (req, res) => {
 });
 
 /// @dev: stakeholder is always created onchain, then to the DB
+// we're using `issuer_assigned_id` to link Fairmint objects to OCF
 stakeholder.post("/create-fairmint-reflection", async (req, res) => {
     const { contract } = req;
     const { data, issuerId } = req.body;
@@ -129,7 +132,7 @@ stakeholder.post("/create-fairmint-reflection", async (req, res) => {
         }
 
         await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB);
-        await createFairmintData({
+        await upsertFairmintObjectByCustomId(custom_id, {
             custom_id,
             attributes: {
                 series_name,
