@@ -111,7 +111,7 @@ stockClass.post("/create-fairmint-reflection", async (req, res) => {
 
         const stockClass = await createStockClass(incomingStockClassForDB);
         await createFairmintData({
-            custom_id,
+            id: custom_id,
             attributes: {
                 stock_class_id: stockClass._id,
             },
