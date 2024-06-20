@@ -13,7 +13,8 @@ import { createStakeholder } from "../db/operations/create.js";
 import { readIssuerById, readStakeholderById, readStakeholderByIssuerAssignedId } from "../db/operations/read.js";
 import validateInputAgainstOCF from "../utils/validateInputAgainstSchema.js";
 import Joi from "joi";
-import { upsertFairmintObjectByCustomId } from "../db/operations/update.js";
+import { upsertFairmintObjectById } from "../db/operations/update.js";
+import { getJoiErrorMessage } from "../chain-operations/utils.js";
 
 const stakeholder = Router();
 
@@ -97,17 +98,22 @@ stakeholder.post("/create-fairmint-reflection", async (req, res) => {
         const issuer = await readIssuerById(issuerId);
 
         const schema = Joi.object({
+            issuerId: Joi.string().required(),
+            data: Joi.object().required(),
             series_name: Joi.string().required(),
-            issuer_assigned_id: Joi.string().required(),
+            custom_id: Joi.string().required(),
         });
 
-        const { error, value: payload } = schema.validate(data);
+        const { error, value: payload } = schema.validate(req.body);
 
         if (error) {
-            req.status(400).send({
+            return res.status(400).send({
                 error: getJoiErrorMessage(error),
             });
         }
+
+        console.log("series_name", payload.series_name);
+        console.log("issuer_assigned_id", payload.issuer_assigned_id);
 
         // OCF doesn't allow extra fields in their validation
         const incomingStakeholderToValidate = {
@@ -119,7 +125,7 @@ stakeholder.post("/create-fairmint-reflection", async (req, res) => {
         const incomingStakeholderForDB = {
             ...incomingStakeholderToValidate,
             issuer: issuer._id,
-            issuer_assigned_id: custom_id,
+            issuer_assigned_id: payload.custom_id,
         };
 
         await validateInputAgainstOCF(incomingStakeholderToValidate, stakeholderSchema);
@@ -132,10 +138,9 @@ stakeholder.post("/create-fairmint-reflection", async (req, res) => {
         }
 
         await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB);
-        await upsertFairmintObjectByCustomId(custom_id, {
-            custom_id,
+        await upsertFairmintObjectById(payload.custom_id, {
             attributes: {
-                series_name,
+                series_name: payload.series_name,
             },
         });
 
