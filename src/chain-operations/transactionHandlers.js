@@ -1,6 +1,6 @@
 import { convertBytes16ToUUID } from "../utils/convertUUID.js";
 import { createHistoricalTransaction } from "../db/operations/create.js";
-import { readFairmintDataByCustomId, readStakeholderById } from "../db/operations/read.js";
+import { readFairmintDataById, readStakeholderById } from "../db/operations/read.js";
 import {
     updateStakeholderById,
     updateStockClassById,
@@ -15,6 +15,8 @@ import {
     upsertIssuerAuthorizedSharesAdjustment,
 } from "../db/operations/update.js";
 import { API_URL } from "./utils.js";
+import axios from "axios";
+import get from "lodash/get";
 
 import { toDecimal } from "../utils/convertToFixedPointDecimals.js";
 import { SERIES_TYPE } from "../fairmint/enums.js";
@@ -49,10 +51,10 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         consideration_text,
         security_law_exemptions,
     } = params;
-
+    console.log("original custom_id", custom_id);
     const _custom_id = convertBytes16ToUUID(custom_id);
-
-    const fairmintData = readFairmintDataByCustomId(_custom_id);
+    console.log("converted custom_id", _custom_id);
+    const fairmintData = readFairmintDataById(_custom_id);
 
     const sharePriceOCF = {
         amount: toDecimal(share_price).toString(),
@@ -107,19 +109,21 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         issuer: issuerId,
         transactionType: "StockIssuance",
     });
-
+    const dollarAmount = Number(toDecimal(share_price)) * Number(toDecimal(quantity)); // TODO: Fix Test this calculation
     if (fairmintData) {
-        console.log("Reflecting Stock Issuance into fairmint...");
-        console.log("issuerId: ", issuerId);
-        const webHookUrl = `${API_URL}/ocp/reflectInvestment?portalId=${issuerId}`;
-        const resp = await axios.post(webHookUrl, {
-            series_name: get(fairmintData, "attributes.series_name"),
+        const body = {
             stakeholder_id: stakeholder._id,
             custom_id: _custom_id,
-            amount: toDecimal(share_price).toString(),
+            amount: dollarAmount,
             number_of_shares: toDecimal(quantity).toString(),
             series_type: SERIES_TYPE.SHARES,
-        });
+        };
+        console.log({ body });
+        console.log("Reflecting Stock Issuance into fairmint...");
+        console.log("issuerId: ", issuerId);
+        console.log("custom_id", _custom_id);
+        const webHookUrl = `${API_URL}/ocp/reflectInvestment?portalId=${issuerId}`;
+        const resp = await axios.post(webHookUrl, body);
         console.log("Successfully reflected Stock Issuance on Fairmint");
         console.log("Fairmint response:", resp.data);
     }
@@ -166,31 +170,37 @@ export const handleStakeholder = async (id) => {
     console.log("StakeholderCreated Event Emitted!", id);
     const incomingStakeholderId = convertBytes16ToUUID(id);
     const stakeholder = await updateStakeholderById(incomingStakeholderId, { is_onchain_synced: true });
+    const fairmintData = await readFairmintDataById(stakeholder.issuer_assigned_id);
 
-    const fairmintData = readFairmintDataByCustomId(stakeholder.issuer_assigned_id);
-
-    const issuerId = stakeholder.issuer.id;
+    const issuerId = stakeholder.issuer;
     console.log("issuerId", issuerId);
+    console.log({ fairmintData });
+    if (fairmintData && fairmintData._id) {
+        console.log("Reflecting Series in fairmint...");
 
-    if (fairmintData) {
-        console.log("Creating Series in fairmint...");
         const reflectSeriesResponse = await axios.post(`${API_URL}/ocp/reflectSeries?portalId=${issuerId}`, {
             stakeholder_id: stakeholder._id,
+            custom_id: stakeholder.issuer_assigned_id,
             series_name: get(fairmintData, "attributes.series_name"),
             stock_class_id: get(fairmintData, "attributes.stock_class_id"),
             stock_plan_id: get(fairmintData, "attributes.stock_plan_id"),
         });
+
         console.log("Successfully reflected Series into Fairmint");
-        console.log("Fairmint response:", reflectSeriesResponse.data);
+        console.log("Fairmint response:", reflectSeriesResponse.data.data);
 
         console.log("Reflecting Stakeholder into fairmint...");
         const webHookUrl = `${API_URL}/ocp/reflectStakeholder?portalId=${issuerId}`;
-        const resp = await axios.post(webHookUrl, {
-            name: get(stakeholder, "name.legal_name"),
+        const body = {
+            firstname: get(stakeholder, "name.first_name"),
+            lastname: get(stakeholder, "name.last_name"),
             stakeholder_id: stakeholder._id,
-            custom_id: fairmintData.custom_id,
-            email: get(stakeholder, "email"),
-        });
+            custom_id: fairmintData._id,
+            email: get(stakeholder, "contact_info.emails.0.email_address"),
+        };
+        console.log({ body });
+
+        const resp = await axios.post(webHookUrl, body);
         console.log(`Successfully reflected Stakeholder ${stakeholder._id} into Fairmint webhook`);
         console.log("Fairmint response:", resp.data);
     }
