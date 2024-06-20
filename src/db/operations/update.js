@@ -19,6 +19,7 @@ import StockTransfer from "../objects/transactions/transfer/StockTransfer.js";
 import Fairmint from "../objects/Fairmint.js";
 import { findByIdAndUpdate, findOne } from "./atomic.ts";
 import { createFactory } from "./create.js";
+import get from "lodash/get";
 
 export const web3WaitTime = 5000;
 
@@ -111,12 +112,12 @@ export const upsertFactory = async (updatedData) => {
     return await createFactory(updatedData);
 };
 
-export const upsertFairmintObjectByCustomId = async (custom_id, updatedData) => {
-    const existing = await findOne(Fairmint, { custom_id });
+export const upsertFairmintObjectById = async (id, updatedData = {}) => {
+    const existing = await findOne(Fairmint, { _id: id });
     if (existing) {
         updatedData.attributes = {
-            ...existing.attributes,
-            ...updatedData.attributes,
+            ...get(existing, "attributes", {}),
+            ...get(updatedData, "attributes", {}),
         };
     }
     return await findByIdAndUpdate(Fairmint, existing._id, updatedData, { new: true, upsert: true });
