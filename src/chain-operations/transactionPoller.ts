@@ -1,7 +1,7 @@
 import { AbiCoder, EventLog } from "ethers";
 import { connectDB } from "../db/config/mongoose.ts";
 import { withGlobalTransaction } from "../db/operations/atomic.ts";
-import { readAllIssuers, readFairmintDataByCustomId } from "../db/operations/read.js";
+import { readAllIssuers, readFairmintDataById } from "../db/operations/read.js";
 import { updateIssuerById } from "../db/operations/update.js";
 import { getIssuerContract } from "../utils/caches.ts";
 import sleep from "../utils/sleep.js";
@@ -162,9 +162,9 @@ const processEvents = async (dbConn, contract, provider, issuer, txHelper, final
 
 const issuerDeployed = async (issuerId, receipt, contract, dbConn) => {
     console.log("New issuer was deployed", { issuerId });
-    const fairmintData = await readFairmintDataByCustomId(issuerId);
-
-    if (fairmintData) {
+    const fairmintData: any = await readFairmintDataById(issuerId);
+    if (fairmintData !== null && fairmintData._id) {
+        console.log("Fairmint data", fairmintData._id);
         console.log("Reflecting Issuer into fairmint...");
         const webHookUrl = `${API_URL}/ocp/reflectCaptable?portalId=${issuerId}`;
         const resp = await axios.post(webHookUrl, {});
