@@ -12,9 +12,6 @@ import stakeholderSchema from "../../ocf/schema/objects/Stakeholder.schema.json"
 import { createStakeholder } from "../db/operations/create.js";
 import { readIssuerById, readStakeholderById, readStakeholderByIssuerAssignedId } from "../db/operations/read.js";
 import validateInputAgainstOCF from "../utils/validateInputAgainstSchema.js";
-import Joi from "joi";
-import { upsertFairmintObjectById } from "../db/operations/update.js";
-import { getJoiErrorMessage } from "../chain-operations/utils.js";
 
 const stakeholder = Router();
 
