@@ -1,8 +1,7 @@
 import { AbiCoder, EventLog } from "ethers";
-import { connectDB } from "../db/config/mongoose.ts";
 import { withGlobalTransaction } from "../db/operations/atomic.ts";
 import { readAllIssuers, readFairmintDataById } from "../db/operations/read.js";
-import { updateIssuerById } from "../db/operations/update.js";
+import { updateIssuerById, upsertFairmintData } from "../db/operations/update.js";
 import { getIssuerContract } from "../utils/caches.ts";
 import sleep from "../utils/sleep.js";
 import { verifyIssuerAndSeed } from "./seed.js";
@@ -170,6 +169,7 @@ const issuerDeployed = async (issuerId, receipt, contract, dbConn) => {
         const resp = await axios.post(webHookUrl, {});
         console.log(`Successfully reflected Issuer ${issuerId} into Fairmint webhook`);
         console.log("Fairmint response:", resp.data);
+        await upsertFairmintData(fairmintData._id, { synced: true });
     }
 
     const events = await contract.queryFilter(contract.filters.IssuerCreated);
