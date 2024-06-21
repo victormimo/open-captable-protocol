@@ -3,12 +3,10 @@ import { v4 as uuid } from "uuid";
 
 import issuerSchema from "../../ocf/schema/objects/Issuer.schema.json" assert { type: "json" };
 import deployCapTable from "../chain-operations/deployCapTable.js";
-import { createIssuer } from "../db/operations/create.js";
+import { createFairmintData, createIssuer } from "../db/operations/create.js";
 import { countIssuers, readIssuerById } from "../db/operations/read.js";
 import { convertUUIDToBytes16 } from "../utils/convertUUID.js";
 import validateInputAgainstOCF from "../utils/validateInputAgainstSchema.js";
-import { createFairmintData } from "../db/operations/create.js";
-import { upsertFairmintData } from "../db/operations/update.js";
 
 const issuer = Router();
 
@@ -111,7 +109,7 @@ issuer.post("/create-fairmint-reflection", async (req, res) => {
         const issuer = await createIssuer(incomingIssuerForDB);
         // saving Fairmint Obj by issuer id so we can retrieve it later on event listener
         console.log("🔥 | Creating Fairmint Data for issuer:", issuer._id);
-        await upsertFairmintData({ id: issuer._id });
+        await createFairmintData({ id: issuer._id });
 
         console.log("✅ | Issuer created off-chain:", issuer);
 
