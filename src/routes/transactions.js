@@ -31,6 +31,7 @@ import { createFairmintData } from "../db/operations/create.js";
 import { getJoiErrorMessage } from "../chain-operations/utils.js";
 import { upsertFairmintObjectById } from "../db/operations/update.js";
 import { SERIES_TYPE } from "../fairmint/enums.js";
+import { reflectSeries } from "../fairmint/reflectSeries.js";
 
 const transactions = Router();
 
@@ -74,7 +75,8 @@ transactions.post("/issuance/stock-fairmint-reflection", async (req, res) => {
     const schema = Joi.object({
         issuerId: Joi.string().uuid().required(),
         data: Joi.object().required(),
-        custom_id: Joi.string().uuid().required(),
+        // custom_id: Joi.string().uuid().required(),
+        series_name: Joi.string().required(),
     });
 
     const { error, value: payload } = schema.validate(req.body);
@@ -98,16 +100,14 @@ transactions.post("/issuance/stock-fairmint-reflection", async (req, res) => {
         incomingStockIssuance.custom_id = payload.custom_id;
         await validateInputAgainstOCF(incomingStockIssuance, stockIssuanceSchema);
 
-        // const stockExists = await readStockIssuanceByCustomId(payload.custom_id);
-
-        // if (stockExists._id) {
-        //     return res.status(409).send({ stockIssuance: stockExists });
-        // }
-
         await convertAndCreateIssuanceStockOnchain(contract, incomingStockIssuance);
 
-        // new db object for fairmint data
-        await upsertFairmintObjectById(payload.custom_id);
+        // warning, custom_id is required
+        await upsertFairmintObjectById(payload.data.custom_id, {
+            attributes: {
+                series_name: payload.series_name,
+            },
+        });
 
         res.status(200).send({ stockIssuance: incomingStockIssuance });
     } catch (error) {
@@ -464,7 +464,7 @@ transactions.post("/issuance/convertible", async (req, res) => {
 transactions.post("/issuance/convertible-fairmint-reflection", async (req, res) => {
     const { issuerId, data } = req.body;
     const schema = Joi.object({
-        custom_id: Joi.string().uuid().required(),
+        // custom_id: Joi.string().uuid().required(),
         series_name: Joi.string().required(),
     });
 
@@ -475,8 +475,6 @@ transactions.post("/issuance/convertible-fairmint-reflection", async (req, res) 
             error: getJoiErrorMessage(error),
         });
     }
-
-    const { custom_id, series_name } = payload;
 
     try {
         // ensuring issuer exists
@@ -494,25 +492,28 @@ transactions.post("/issuance/convertible-fairmint-reflection", async (req, res) 
         console.log("incomingConvertibleIssuance", incomingConvertibleIssuance);
         // await validateInputAgainstOCF(incomingConvertibleIssuance, convertibleIssuanceSchema); //TODO: fix me
 
-        // check if it exists
-        const convertibleExists = await readConvertibleIssuanceByCustomId(data?.custom_id);
-        if (convertibleExists._id) {
-            return res.status(200).send({ convertibleIssuance: convertibleExists });
-        }
-
         // save to DB
         const createdIssuance = await createConvertibleIssuance(incomingConvertibleIssuance);
-        await createFairmintData({
-            custom_id,
+        await upsertFairmintObjectById(payload.data.custom_id, {
             attributes: {
-                series_name,
+                series_name: payload.series_name,
             },
         });
 
+        const seriesCreated = await reflectSeries({
+            issuerId,
+            series_id: payload.data.custom_id,
+            stock_class_id: null,
+            stock_plan_id: null,
+            series_name: payload.series_name,
+        });
+
+        console.log("series created response ", seriesCreated);
+
         const body = {
             stakeholder_id: stakeholder._id,
-            custom_id: payload.custom_id,
-            amount: get(incomingConvertibleIssuance, "investment_amount.amount", "0"),
+            series_id: payload.custom_id,
+            amount: get(incomingConvertibleIssuance, "investment_amount.amount", 0),
             series_type: SERIES_TYPE.FUNDRAISING,
         };
         console.log({ body });
