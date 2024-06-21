@@ -88,12 +88,6 @@ stockPlan.post("/create-fairmint-reflection", async (req, res) => {
         await validateInputAgainstOCF(incomingStockPlanToValidate, stockPlanSchema);
         const stockPlan = await createStockPlan(incomingStockPlanForDB);
 
-        await upsertFairmintObjectById(custom_id, {
-            attributes: {
-                stock_plan_id: stockPlan.id,
-            },
-        });
-
         console.log("✅ | Created Stock Plan in DB: ", stockPlan);
 
         res.status(200).send({ stockPlan });
