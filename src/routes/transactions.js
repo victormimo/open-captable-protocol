@@ -24,14 +24,17 @@ import { convertAndCreateRetractionStockOnchain } from "../controllers/transacti
 import { convertAndCreateTransferStockOnchain } from "../controllers/transactions/transferController.js";
 import { createConvertibleIssuance, createEquityCompensationIssuance } from "../db/operations/create.js";
 
-import { readConvertibleIssuanceByCustomId, readIssuerById, readStockIssuanceByCustomId } from "../db/operations/read.js";
+import { readConvertibleIssuanceByCustomId, readIssuerById, readStakeholderById, readStockIssuanceByCustomId } from "../db/operations/read.js";
 import validateInputAgainstOCF from "../utils/validateInputAgainstSchema.js";
 import { StockIssuance } from "../chain-operations/structs.js";
 import { createFairmintData } from "../db/operations/create.js";
 import { getJoiErrorMessage } from "../chain-operations/utils.js";
-import { upsertFairmintObjectById } from "../db/operations/update.js";
+import { upsertFairmintData, upsertFairmintDataByCustomId } from "../db/operations/update.js";
 import { SERIES_TYPE } from "../fairmint/enums.js";
 import { reflectSeries } from "../fairmint/reflectSeries.js";
+import get from "lodash/get";
+import { API_URL } from "../chain-operations/utils.js";
+import axios from "axios";
 
 const transactions = Router();
 
@@ -102,7 +105,7 @@ transactions.post("/issuance/stock-fairmint-reflection", async (req, res) => {
         await convertAndCreateIssuanceStockOnchain(contract, incomingStockIssuance);
 
         // warning, custom_id is required
-        await createFairmintData({
+        await upsertFairmintDataByCustomId(data.custom_id, {
             custom_id: data.custom_id,
             attributes: {
                 series_name: payload.series_name,
@@ -464,14 +467,15 @@ transactions.post("/issuance/convertible", async (req, res) => {
 transactions.post("/issuance/convertible-fairmint-reflection", async (req, res) => {
     const { issuerId, data } = req.body;
     const schema = Joi.object({
-        // custom_id: Joi.string().uuid().required(),
         series_name: Joi.string().required(),
+        data: Joi.object().required(),
+        issuerId: Joi.string().uuid().required(),
     });
 
-    const { error, value: payload } = schema.validate(data);
+    const { error, value: payload } = schema.validate(req.body);
 
     if (error) {
-        req.status(400).send({
+        res.status(400).send({
             error: getJoiErrorMessage(error),
         });
     }
@@ -492,11 +496,17 @@ transactions.post("/issuance/convertible-fairmint-reflection", async (req, res) 
         console.log("incomingConvertibleIssuance", incomingConvertibleIssuance);
         // await validateInputAgainstOCF(incomingConvertibleIssuance, convertibleIssuanceSchema); //TODO: fix me
 
+        // check if the stakeholder exists
+        const stakeholder = await readStakeholderById(incomingConvertibleIssuance.stakeholder_id);
+        if (!stakeholder._id) {
+            return res.status(400).send({ error: "Stakeholder not found" });
+        }
+
         // save to DB
         const createdIssuance = await createConvertibleIssuance(incomingConvertibleIssuance);
         // TODO: change to create instead of upsert
 
-        await upsertFairmintObjectById(payload.data.custom_id, {
+        await upsertFairmintData(payload.data.custom_id, {
             attributes: {
                 series_name: payload.series_name,
             },
@@ -505,8 +515,6 @@ transactions.post("/issuance/convertible-fairmint-reflection", async (req, res) 
         const seriesCreated = await reflectSeries({
             issuerId,
             series_id: payload.data.custom_id,
-            stock_class_id: null,
-            stock_plan_id: null,
             series_name: payload.series_name,
         });
 
@@ -514,14 +522,14 @@ transactions.post("/issuance/convertible-fairmint-reflection", async (req, res) 
 
         const body = {
             stakeholder_id: stakeholder._id,
-            series_id: payload.custom_id,
+            series_id: payload.data.custom_id,
             amount: get(incomingConvertibleIssuance, "investment_amount.amount", 0),
             series_type: SERIES_TYPE.FUNDRAISING,
         };
         console.log({ body });
         console.log("Reflecting Convertible Issuance into fairmint...");
         console.log("issuerId: ", issuerId);
-        console.log("custom_id", custom_id);
+        console.log("custom_id", payload.data.custom_id);
         const webHookUrl = `${API_URL}/ocp/reflectInvestment?portalId=${issuerId}`;
         const resp = await axios.post(webHookUrl, body);
         console.log("Successfully reflected Convertible Issuance on Fairmint");
