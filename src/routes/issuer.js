@@ -8,6 +8,7 @@ import { countIssuers, readIssuerById } from "../db/operations/read.js";
 import { convertUUIDToBytes16 } from "../utils/convertUUID.js";
 import validateInputAgainstOCF from "../utils/validateInputAgainstSchema.js";
 import { createFairmintData } from "../db/operations/create.js";
+import { upsertFairmintData } from "../db/operations/update.js";
 
 const issuer = Router();
 
@@ -89,6 +90,7 @@ issuer.post("/create-fairmint-reflection", async (req, res) => {
 
         await validateInputAgainstOCF(incomingIssuerToValidate, issuerSchema);
 
+        // in case issuer already exists, return it
         // const exists = await readIssuerById(incomingIssuerToValidate.id);
         // if (exists && exists._id) {
         //     return res.status(409).send({ issuer: exists });
@@ -109,7 +111,7 @@ issuer.post("/create-fairmint-reflection", async (req, res) => {
         const issuer = await createIssuer(incomingIssuerForDB);
         // saving Fairmint Obj by issuer id so we can retrieve it later on event listener
         console.log("🔥 | Creating Fairmint Data for issuer:", issuer._id);
-        await createFairmintData({ id: issuer._id });
+        await upsertFairmintData({ id: issuer._id });
 
         console.log("✅ | Issuer created off-chain:", issuer);
 
