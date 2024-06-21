@@ -112,13 +112,13 @@ export const upsertFactory = async (updatedData) => {
     return await createFactory(updatedData);
 };
 
-export const upsertFairmintObjectById = async (id, updatedData = {}) => {
+export const upsertFairmintData = async (id, updatedData = {}) => {
     const existing = await findOne(Fairmint, { _id: id });
-    if (existing) {
+    if (existing && existing._id) {
         updatedData.attributes = {
             ...get(existing, "attributes", {}),
             ...get(updatedData, "attributes", {}),
         };
     }
-    return await findByIdAndUpdate(Fairmint, existing._id, updatedData, { new: true, upsert: true });
+    return await findByIdAndUpdate(Fairmint, get(existing, "_id"), updatedData, { new: true, upsert: true });
 };
