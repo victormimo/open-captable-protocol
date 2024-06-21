@@ -4,7 +4,6 @@ import stockPlanSchema from "../../ocf/schema/objects/StockPlan.schema.json" ass
 import { createStockPlan } from "../db/operations/create.js";
 import { countStockPlans, readIssuerById, readStockPlanById } from "../db/operations/read.js";
 import validateInputAgainstOCF from "../utils/validateInputAgainstSchema.js";
-import { upsertFairmintObjectById } from "../db/operations/update.js";
 
 const stockPlan = Router();
 
