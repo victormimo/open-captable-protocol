@@ -504,13 +504,6 @@ transactions.post("/issuance/convertible-fairmint-reflection", async (req, res) 
 
         // save to DB
         const createdIssuance = await createConvertibleIssuance(incomingConvertibleIssuance);
-        // TODO: change to create instead of upsert
-
-        await upsertFairmintData(payload.data.custom_id, {
-            attributes: {
-                series_name: payload.series_name,
-            },
-        });
 
         const seriesCreated = await reflectSeries({
             issuerId,
