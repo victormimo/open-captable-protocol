@@ -498,7 +498,7 @@ transactions.post("/issuance/convertible-fairmint-reflection", async (req, res) 
 
         // check if the stakeholder exists
         const stakeholder = await readStakeholderById(incomingConvertibleIssuance.stakeholder_id);
-        if (!stakeholder._id) {
+        if (!stakeholder || !stakeholder._id) {
             return res.status(400).send({ error: "Stakeholder not found" });
         }
 
