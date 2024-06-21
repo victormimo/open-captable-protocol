@@ -108,14 +108,17 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         issuer: issuerId,
         transactionType: "StockIssuance",
     });
+
     const dollarAmount = Number(toDecimal(share_price)) * Number(toDecimal(quantity)); // TODO: Fix Test this calculation
-    if (fairmintData) {
+
+    if (fairmintData && fairmintData._id) {
+        console.log({ fairmintData });
         // First, create series (or verify it's created)
         const seriesCreated = await reflectSeries({
             issuerId,
             series_id: createdStockIssuance.custom_id,
             stock_class_id: get(createdStockIssuance, "stock_class_id", null),
-            stock_plan_id: get(createdStockIssuance, "stock_plan_id", null), // what happens if this is null?
+            stock_plan_id: get(createdStockIssuance, "stock_plan_id", null),
             series_name: fairmintData.series_name,
         });
 
