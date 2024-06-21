@@ -169,7 +169,6 @@ const issuerDeployed = async (issuerId, receipt, contract, dbConn) => {
         const resp = await axios.post(webHookUrl, {});
         console.log(`Successfully reflected Issuer ${issuerId} into Fairmint webhook`);
         console.log("Fairmint response:", resp.data);
-        await upsertFairmintData(fairmintData._id, { synced: true });
     }
 
     const events = await contract.queryFilter(contract.filters.IssuerCreated);
