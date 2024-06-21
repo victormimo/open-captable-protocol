@@ -1,4 +1,4 @@
-import { API_URL } from "./utils.js";
+import { API_URL } from "../chain-operations/utils";
 
 export const reflectSeries = async ({ issuerId, custom_id, series_name, stock_class_id, stock_plan_id }) => {
     console.log("Reflecting Series in fairmint...");
