@@ -20,6 +20,7 @@ import Fairmint from "../objects/Fairmint.js";
 import { findByIdAndUpdate, findOne } from "./atomic.ts";
 import { createFactory } from "./create.js";
 import get from "lodash/get";
+import { v4 as uuid } from "uuid";
 
 export const web3WaitTime = 5000;
 
@@ -131,5 +132,5 @@ export const upsertFairmintDataByCustomId = async (custom_id, updatedData = {}) 
             ...get(updatedData, "attributes", {}),
         };
     }
-    return await findByIdAndUpdate(Fairmint, get(existing, "_id"), updatedData, { new: true, upsert: true });
+    return await findByIdAndUpdate(Fairmint, get(existing, "_id", uuid()), updatedData, { new: true, upsert: true });
 };
