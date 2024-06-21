@@ -75,17 +75,17 @@ transactions.post("/issuance/stock-fairmint-reflection", async (req, res) => {
     const schema = Joi.object({
         issuerId: Joi.string().uuid().required(),
         data: Joi.object().required(),
-        // custom_id: Joi.string().uuid().required(),
         series_name: Joi.string().required(),
     });
 
     const { error, value: payload } = schema.validate(req.body);
 
     if (error) {
-        return req.status(400).send({
+        return res.status(400).send({
             error: getJoiErrorMessage(error),
         });
     }
+
     try {
         await readIssuerById(issuerId);
 
@@ -97,13 +97,13 @@ transactions.post("/issuance/stock-fairmint-reflection", async (req, res) => {
             ...data,
         };
 
-        incomingStockIssuance.custom_id = payload.custom_id;
         await validateInputAgainstOCF(incomingStockIssuance, stockIssuanceSchema);
 
         await convertAndCreateIssuanceStockOnchain(contract, incomingStockIssuance);
 
         // warning, custom_id is required
-        await upsertFairmintObjectById(payload.data.custom_id, {
+        await createFairmintData({
+            custom_id: data.custom_id,
             attributes: {
                 series_name: payload.series_name,
             },
@@ -494,6 +494,8 @@ transactions.post("/issuance/convertible-fairmint-reflection", async (req, res) 
 
         // save to DB
         const createdIssuance = await createConvertibleIssuance(incomingConvertibleIssuance);
+        // TODO: change to create instead of upsert
+
         await upsertFairmintObjectById(payload.data.custom_id, {
             attributes: {
                 series_name: payload.series_name,
