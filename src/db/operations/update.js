@@ -16,16 +16,16 @@ import StockReissuance from "../objects/transactions/reissuance/StockReissuance.
 import StockRepurchase from "../objects/transactions/repurchase/StockRepurchase.js";
 import StockRetraction from "../objects/transactions/retraction/StockRetraction.js";
 import StockTransfer from "../objects/transactions/transfer/StockTransfer.js";
+import Fairmint from "../objects/Fairmint.js";
 import { findByIdAndUpdate, findOne } from "./atomic.ts";
 import { createFactory } from "./create.js";
-
+import get from "lodash/get";
 
 export const web3WaitTime = 5000;
 
-
 const retryOnMiss = async (updateFunc, numRetries = 5, waitBase = null) => {
-    /* kkolze: When polling `latest` instead of `finalized` web3 blocks, web3 can get ahead of mongo 
-      For example, see the `issuer.post("/create"` code: the issuer is created in mongo after deployCapTable is called  
+    /* kkolze: When polling `latest` instead of `finalized` web3 blocks, web3 can get ahead of mongo
+      For example, see the `issuer.post("/create"` code: the issuer is created in mongo after deployCapTable is called
       We add retries to ensure the server routes have written to mongo  */
     let tried = 0;
     const waitMultiplier = waitBase || web3WaitTime;
@@ -37,8 +37,7 @@ const retryOnMiss = async (updateFunc, numRetries = 5, waitBase = null) => {
         tried++;
         await sleep(tried * waitMultiplier, "Returned null, retrying in ");
     }
-}
-
+};
 
 export const updateIssuerById = async (id, updatedData) => {
     return await findByIdAndUpdate(Issuer, id, updatedData, { new: true });
@@ -109,6 +108,17 @@ export const upsertFactory = async (updatedData) => {
     const existing = await findOne(Factory);
     if (existing) {
         return await findByIdAndUpdate(Factory, existing._id, updatedData, { new: true });
-    } 
+    }
     return await createFactory(updatedData);
-}
+};
+
+export const upsertFairmintObjectById = async (id, updatedData = {}) => {
+    const existing = await findOne(Fairmint, { _id: id });
+    if (existing) {
+        updatedData.attributes = {
+            ...get(existing, "attributes", {}),
+            ...get(updatedData, "attributes", {}),
+        };
+    }
+    return await findByIdAndUpdate(Fairmint, existing._id, updatedData, { new: true, upsert: true });
+};

@@ -61,7 +61,7 @@ export const convertAndCreateIssuanceStockOnchain = async (contract, issuance) =
         stock_legend_ids,
         issuance_type,
         comments,
-        custom_id,
+        custom_id: convertUUIDToBytes16(custom_id),
         stakeholder_id: convertUUIDToBytes16(stakeholder_id),
         board_approval_date,
         stockholder_approval_date,

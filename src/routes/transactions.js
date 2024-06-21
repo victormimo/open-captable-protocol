@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { v4 as uuid } from "uuid";
+import Joi from "joi";
 
 import stockAcceptanceSchema from "../../ocf/schema/objects/transactions/acceptance/StockAcceptance.schema.json" assert { type: "json" };
 import issuerAuthorizedSharesAdjustmentSchema from "../../ocf/schema/objects/transactions/adjustment/IssuerAuthorizedSharesAdjustment.schema.json" assert { type: "json" };
@@ -26,6 +27,10 @@ import { createConvertibleIssuance, createEquityCompensationIssuance } from "../
 import { readConvertibleIssuanceByCustomId, readIssuerById, readStockIssuanceByCustomId } from "../db/operations/read.js";
 import validateInputAgainstOCF from "../utils/validateInputAgainstSchema.js";
 import { StockIssuance } from "../chain-operations/structs.js";
+import { createFairmintData } from "../db/operations/create.js";
+import { getJoiErrorMessage } from "../chain-operations/utils.js";
+import { upsertFairmintObjectById } from "../db/operations/update.js";
+import { SERIES_TYPE } from "../fairmint/enums.js";
 
 const transactions = Router();
 
@@ -51,6 +56,58 @@ transactions.post("/issuance/stock", async (req, res) => {
         }
 
         await convertAndCreateIssuanceStockOnchain(contract, incomingStockIssuance);
+
+        res.status(200).send({ stockIssuance: incomingStockIssuance });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send(`${error}`);
+    }
+});
+
+transactions.post("/issuance/stock-fairmint-reflection", async (req, res) => {
+    const { contract } = req;
+    const { issuerId, data } = req.body;
+
+    /*
+    We need new information to pass to Fairmint, like series name
+    */
+    const schema = Joi.object({
+        issuerId: Joi.string().uuid().required(),
+        data: Joi.object().required(),
+        custom_id: Joi.string().uuid().required(),
+    });
+
+    const { error, value: payload } = schema.validate(req.body);
+
+    if (error) {
+        return req.status(400).send({
+            error: getJoiErrorMessage(error),
+        });
+    }
+    try {
+        await readIssuerById(issuerId);
+
+        const incomingStockIssuance = {
+            id: uuid(), // for OCF Validation
+            security_id: uuid(), // for OCF Validation
+            date: new Date().toISOString().slice(0, 10), // for OCF Validation
+            object_type: "TX_STOCK_ISSUANCE",
+            ...data,
+        };
+
+        incomingStockIssuance.custom_id = payload.custom_id;
+        await validateInputAgainstOCF(incomingStockIssuance, stockIssuanceSchema);
+
+        // const stockExists = await readStockIssuanceByCustomId(payload.custom_id);
+
+        // if (stockExists._id) {
+        //     return res.status(409).send({ stockIssuance: stockExists });
+        // }
+
+        await convertAndCreateIssuanceStockOnchain(contract, incomingStockIssuance);
+
+        // new db object for fairmint data
+        await upsertFairmintObjectById(payload.custom_id);
 
         res.status(200).send({ stockIssuance: incomingStockIssuance });
     } catch (error) {
@@ -321,6 +378,53 @@ transactions.post("/issuance/equity-compensation", async (req, res) => {
     }
 });
 
+transactions.post("/issuance/equity-compensation-fairmint-reflection", async (req, res) => {
+    const { issuerId, data } = req.body;
+
+    const schema = Joi.object({
+        custom_id: Joi.string().uuid().required(),
+    });
+
+    const { error, value: payload } = schema.validate(data);
+
+    if (error) {
+        req.status(400).send({
+            error: getJoiErrorMessage(error),
+        });
+    }
+
+    const { custom_id } = payload;
+    try {
+        // ensuring issuer exists
+        await readIssuerById(issuerId);
+
+        const incomingEquityCompensationIssuance = {
+            id: uuid(), // for OCF Validation
+            security_id: uuid(), // for OCF Validation,
+            date: new Date().toISOString().slice(0, 10), // for OCF Validation
+            object_type: "TX_EQUITY_COMPENSATION_ISSUANCE",
+            ...data,
+        };
+        // TODO: fix ocf validation
+        // await validateInputAgainstOCF(incomingEquityCompensationIssuance, equityCompensationIssuanceSchema);
+
+        // save to DB
+        const createdIssuance = await createEquityCompensationIssuance(incomingEquityCompensationIssuance);
+        await createFairmintData({
+            custom_id,
+            attributes: {
+                series_name,
+            },
+        });
+        // Note: this will have it's own listener in the future to check with Fairmint Obj and sync with Fairmint accordingly
+
+        res.status(200).send({ equityCompensationIssuance: createdIssuance });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send(`${error}`);
+    }
+});
+
 transactions.post("/issuance/convertible", async (req, res) => {
     const { issuerId, data } = req.body;
 
@@ -357,4 +461,74 @@ transactions.post("/issuance/convertible", async (req, res) => {
     }
 });
 
+transactions.post("/issuance/convertible-fairmint-reflection", async (req, res) => {
+    const { issuerId, data } = req.body;
+    const schema = Joi.object({
+        custom_id: Joi.string().uuid().required(),
+        series_name: Joi.string().required(),
+    });
+
+    const { error, value: payload } = schema.validate(data);
+
+    if (error) {
+        req.status(400).send({
+            error: getJoiErrorMessage(error),
+        });
+    }
+
+    const { custom_id, series_name } = payload;
+
+    try {
+        // ensuring issuer exists
+        await readIssuerById(issuerId);
+
+        const incomingConvertibleIssuance = {
+            issuer: issuerId, // TEMPORARY: need to change when deployed on chain
+            id: uuid(), // for OCF Validation
+            security_id: uuid(), // for OCF Validation
+            date: new Date().toISOString().slice(0, 10), // for OCF Validation
+            object_type: "TX_CONVERTIBLE_ISSUANCE",
+            ...data,
+        };
+
+        console.log("incomingConvertibleIssuance", incomingConvertibleIssuance);
+        // await validateInputAgainstOCF(incomingConvertibleIssuance, convertibleIssuanceSchema); //TODO: fix me
+
+        // check if it exists
+        const convertibleExists = await readConvertibleIssuanceByCustomId(data?.custom_id);
+        if (convertibleExists._id) {
+            return res.status(200).send({ convertibleIssuance: convertibleExists });
+        }
+
+        // save to DB
+        const createdIssuance = await createConvertibleIssuance(incomingConvertibleIssuance);
+        await createFairmintData({
+            custom_id,
+            attributes: {
+                series_name,
+            },
+        });
+
+        const body = {
+            stakeholder_id: stakeholder._id,
+            custom_id: payload.custom_id,
+            amount: get(incomingConvertibleIssuance, "investment_amount.amount", "0"),
+            series_type: SERIES_TYPE.FUNDRAISING,
+        };
+        console.log({ body });
+        console.log("Reflecting Convertible Issuance into fairmint...");
+        console.log("issuerId: ", issuerId);
+        console.log("custom_id", custom_id);
+        const webHookUrl = `${API_URL}/ocp/reflectInvestment?portalId=${issuerId}`;
+        const resp = await axios.post(webHookUrl, body);
+        console.log("Successfully reflected Convertible Issuance on Fairmint");
+        console.log("Fairmint response:", resp.data);
+        // Note: this will have it's own listener in the future to check with Fairmint Obj and sync with Fairmint accordingly
+
+        res.status(200).send({ convertibleIssuance: createdIssuance });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send(`${error}`);
+    }
+});
 export default transactions;

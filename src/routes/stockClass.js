@@ -5,6 +5,9 @@ import { convertAndReflectStockClassOnchain, getStockClassById, getTotalNumberOf
 import { createStockClass } from "../db/operations/create.js";
 import { readIssuerById, readStockClassById } from "../db/operations/read.js";
 import validateInputAgainstOCF from "../utils/validateInputAgainstSchema.js";
+import { getJoiErrorMessage } from "../chain-operations/utils.js";
+import Joi from "joi";
+import { createFairmintData } from "../db/operations/create.js";
 
 const stockClass = Router();
 
@@ -66,6 +69,53 @@ stockClass.post("/create", async (req, res) => {
         await convertAndReflectStockClassOnchain(contract, incomingStockClassForDB);
 
         const stockClass = await createStockClass(incomingStockClassForDB);
+
+        console.log("✅ | Stock Class created offchain:", stockClass);
+
+        res.status(200).send({ stockClass });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send(`${error}`);
+    }
+});
+
+// @dev use `id` to save the fairmint data
+stockClass.post("/create-fairmint-reflection", async (req, res) => {
+    try {
+        const { contract } = req;
+        const { custom_id, data, issuerId } = req.body;
+
+        const issuer = await readIssuerById(issuerId);
+
+        // OCF doesn't allow extra fields in their validation
+        const incomingStockClassToValidate = {
+            id: uuid(),
+            object_type: "STOCK_CLASS",
+            ...data,
+        };
+
+        const incomingStockClassForDB = {
+            ...incomingStockClassToValidate,
+            issuer: issuer._id,
+        };
+        await validateInputAgainstOCF(incomingStockClassToValidate, stockClassSchema);
+
+        console.log("stockClassId", data.id);
+        const exists = await readStockClassById(data.id);
+
+        if (exists && exists._id) {
+            return res.status(409).send({ stockClass: exists });
+        }
+
+        await convertAndReflectStockClassOnchain(contract, incomingStockClassForDB);
+
+        const stockClass = await createStockClass(incomingStockClassForDB);
+        await createFairmintData({
+            id: custom_id,
+            attributes: {
+                stock_class_id: stockClass._id,
+            },
+        });
 
         console.log("✅ | Stock Class created offchain:", stockClass);
 
