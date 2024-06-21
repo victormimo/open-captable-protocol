@@ -122,3 +122,14 @@ export const upsertFairmintData = async (id, updatedData = {}) => {
     }
     return await findByIdAndUpdate(Fairmint, get(existing, "_id"), updatedData, { new: true, upsert: true });
 };
+
+export const upsertFairmintDataByCustomId = async (custom_id, updatedData = {}) => {
+    const existing = await findOne(Fairmint, { custom_id });
+    if (existing && existing._id) {
+        updatedData.attributes = {
+            ...get(existing, "attributes", {}),
+            ...get(updatedData, "attributes", {}),
+        };
+    }
+    return await findByIdAndUpdate(Fairmint, get(existing, "_id"), updatedData, { new: true, upsert: true });
+};
