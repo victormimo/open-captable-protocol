@@ -89,31 +89,12 @@ stakeholder.post("/create", async (req, res) => {
 });
 
 /// @dev: stakeholder is always created onchain, then to the DB
-// we're using `issuer_assigned_id` to link Fairmint objects to OCF
 stakeholder.post("/create-fairmint-reflection", async (req, res) => {
     const { contract } = req;
     const { data, issuerId } = req.body;
 
     try {
         const issuer = await readIssuerById(issuerId);
-
-        const schema = Joi.object({
-            issuerId: Joi.string().required(),
-            data: Joi.object().required(),
-            series_name: Joi.string().required(),
-            custom_id: Joi.string().required(),
-        });
-
-        const { error, value: payload } = schema.validate(req.body);
-
-        if (error) {
-            return res.status(400).send({
-                error: getJoiErrorMessage(error),
-            });
-        }
-
-        console.log("series_name", payload.series_name);
-        console.log("issuer_assigned_id", payload.issuer_assigned_id);
 
         // OCF doesn't allow extra fields in their validation
         const incomingStakeholderToValidate = {
@@ -125,24 +106,11 @@ stakeholder.post("/create-fairmint-reflection", async (req, res) => {
         const incomingStakeholderForDB = {
             ...incomingStakeholderToValidate,
             issuer: issuer._id,
-            issuer_assigned_id: payload.custom_id,
         };
 
         await validateInputAgainstOCF(incomingStakeholderToValidate, stakeholderSchema);
 
-        console.log(`Checking if Stakeholder id: ${data.issuer_assigned_id} exists`);
-        const existingStakeholder = await readStakeholderByIssuerAssignedId(data.issuer_assigned_id);
-
-        if (existingStakeholder && existingStakeholder._id) {
-            return res.status(200).send({ stakeholder: existingStakeholder });
-        }
-
         await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB);
-        await upsertFairmintObjectById(payload.custom_id, {
-            attributes: {
-                series_name: payload.series_name,
-            },
-        });
 
         const stakeholder = await createStakeholder(incomingStakeholderForDB);
 
