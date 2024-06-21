@@ -1,6 +1,6 @@
 import { convertBytes16ToUUID } from "../utils/convertUUID.js";
 import { createHistoricalTransaction } from "../db/operations/create.js";
-import { readFairmintDataById, readStakeholderById } from "../db/operations/read.js";
+import { readFairmintDataByCustomId, readStakeholderById } from "../db/operations/read.js";
 import {
     updateStakeholderById,
     updateStockClassById,
@@ -53,7 +53,8 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         security_law_exemptions,
     } = params;
     const _custom_id = convertBytes16ToUUID(custom_id);
-    const fairmintData = readFairmintDataById(_custom_id);
+
+    const fairmintData = await readFairmintDataByCustomId(_custom_id);
 
     const sharePriceOCF = {
         amount: toDecimal(share_price).toString(),
@@ -119,14 +120,14 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
             series_id: createdStockIssuance.custom_id,
             stock_class_id: get(createdStockIssuance, "stock_class_id", null),
             stock_plan_id: get(createdStockIssuance, "stock_plan_id", null),
-            series_name: fairmintData.series_name,
+            series_name: get(fairmintData, "attributes.series_name"),
         });
 
         console.log("series created response ", seriesCreated);
 
         const body = {
             stakeholder_id: stakeholder._id,
-            custom_id: _custom_id,
+            series_id: _custom_id,
             amount: dollarAmount,
             number_of_shares: toDecimal(quantity).toString(),
             series_type: SERIES_TYPE.SHARES,
