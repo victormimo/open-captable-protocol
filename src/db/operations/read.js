@@ -113,3 +113,7 @@ export const readfactories = async () => {
 export const readFairmintDataById = async (id) => {
     return await Fairmint.findById(id);
 };
+
+export const readFairmintDataByCustomId = async (custom_id) => {
+    return await Fairmint.findOne({ custom_id });
+};
