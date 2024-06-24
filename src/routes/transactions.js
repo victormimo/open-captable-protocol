@@ -385,18 +385,18 @@ transactions.post("/issuance/equity-compensation-fairmint-reflection", async (re
     const { issuerId, data } = req.body;
 
     const schema = Joi.object({
-        custom_id: Joi.string().uuid().required(),
+        issuerId: Joi.string().uuid().required(),
+        series_name: Joi.string().required(),
+        data: Joi.object().required(),
     });
 
-    const { error, value: payload } = schema.validate(data);
+    const { error, value: payload } = schema.validate(req.body);
 
     if (error) {
         req.status(400).send({
             error: getJoiErrorMessage(error),
         });
     }
-
-    const { custom_id } = payload;
     try {
         // ensuring issuer exists
         await readIssuerById(issuerId);
@@ -410,16 +410,36 @@ transactions.post("/issuance/equity-compensation-fairmint-reflection", async (re
         };
         // TODO: fix ocf validation
         // await validateInputAgainstOCF(incomingEquityCompensationIssuance, equityCompensationIssuanceSchema);
+        // check if the stakeholder exists
+        const stakeholder = await readStakeholderById(incomingEquityCompensationIssuance.stakeholder_id);
+        if (!stakeholder || !stakeholder._id) {
+            return res.status(400).send({ error: "Stakeholder not found" });
+        }
 
         // save to DB
         const createdIssuance = await createEquityCompensationIssuance(incomingEquityCompensationIssuance);
-        await createFairmintData({
-            custom_id,
-            attributes: {
-                series_name,
-            },
+        const seriesCreated = await reflectSeries({
+            issuerId,
+            series_id: payload.data.custom_id,
+            series_name: payload.series_name,
         });
-        // Note: this will have it's own listener in the future to check with Fairmint Obj and sync with Fairmint accordingly
+        console.log("series created response ", seriesCreated);
+
+        const body = {
+            stakeholder_id: stakeholder._id,
+            series_id: payload.data.custom_id,
+            token_amount: get(incomingEquityCompensationIssuance, "quantity", 0),
+            exercise_price: get(incomingEquityCompensationIssuance, "exercise_price.amount", 0),
+            compensation_type: get(incomingEquityCompensationIssuance, "compensation_type", ""),
+        };
+        console.log({ body });
+        console.log("Reflecting Equity Compensation Issuance into fairmint...");
+        console.log("issuerId: ", issuerId);
+        console.log("custom_id", payload.data.custom_id);
+        const webHookUrl = `${API_URL}/ocp/reflectGrant?portalId=${issuerId}`;
+        const resp = await axios.post(webHookUrl, body);
+        console.log("Successfully reflected Equity Compensation Issuance on Fairmint");
+        console.log("Fairmint response:", resp.data);
 
         res.status(200).send({ equityCompensationIssuance: createdIssuance });
     } catch (error) {
