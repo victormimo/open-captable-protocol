@@ -383,7 +383,6 @@ transactions.post("/issuance/equity-compensation", async (req, res) => {
 
 transactions.post("/issuance/equity-compensation-fairmint-reflection", async (req, res) => {
     const { issuerId, data } = req.body;
-
     const schema = Joi.object({
         issuerId: Joi.string().uuid().required(),
         series_name: Joi.string().required(),
@@ -393,7 +392,7 @@ transactions.post("/issuance/equity-compensation-fairmint-reflection", async (re
     const { error, value: payload } = schema.validate(req.body);
 
     if (error) {
-        req.status(400).send({
+        res.status(400).send({
             error: getJoiErrorMessage(error),
         });
     }
