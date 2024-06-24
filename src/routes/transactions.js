@@ -383,20 +383,20 @@ transactions.post("/issuance/equity-compensation", async (req, res) => {
 
 transactions.post("/issuance/equity-compensation-fairmint-reflection", async (req, res) => {
     const { issuerId, data } = req.body;
-
     const schema = Joi.object({
-        custom_id: Joi.string().uuid().required(),
+        series_name: Joi.string().required(),
+        data: Joi.object().required(), // custom_id must be filled in data
+        issuerId: Joi.string().uuid().required(),
     });
 
-    const { error, value: payload } = schema.validate(data);
+    const { error, value: payload } = schema.validate(req.body);
 
     if (error) {
-        req.status(400).send({
+        res.status(400).send({
             error: getJoiErrorMessage(error),
         });
     }
 
-    const { custom_id } = payload;
     try {
         // ensuring issuer exists
         await readIssuerById(issuerId);
@@ -414,7 +414,7 @@ transactions.post("/issuance/equity-compensation-fairmint-reflection", async (re
         // save to DB
         const createdIssuance = await createEquityCompensationIssuance(incomingEquityCompensationIssuance);
         await createFairmintData({
-            custom_id,
+            custom_id: data.custom_id,
             attributes: {
                 series_name,
             },
