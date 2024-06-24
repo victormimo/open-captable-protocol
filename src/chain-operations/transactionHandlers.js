@@ -192,9 +192,11 @@ export const handleStakeholder = async (id) => {
     console.log("Reflecting Stakeholder into fairmint...");
     const webHookUrl = `${API_URL}/ocp/reflectStakeholder?portalId=${issuerId}`;
     const body = {
+        legal_name: get(stakeholder, "name.legal_name"),
         firstname: get(stakeholder, "name.first_name"),
         lastname: get(stakeholder, "name.last_name"),
-        stakeholder_id: stakeholder._id,
+        stakeholder_id: get(stakeholder, "_id"),
+        stakeholder_type: get(stakeholder, "stakeholder_type"),
         email: get(stakeholder, "contact_info.emails.0.email_address"),
     };
     console.log({ body });
