@@ -124,8 +124,8 @@ export const upsertFairmintData = async (id, updatedData = {}) => {
     return await findByIdAndUpdate(Fairmint, get(existing, "_id"), updatedData, { new: true, upsert: true });
 };
 
-export const upsertFairmintDataByCustomId = async (custom_id, updatedData = {}) => {
-    const existing = await findOne(Fairmint, { custom_id });
+export const upsertFairmintDataBySeriesId = async (series_id, updatedData = {}) => {
+    const existing = await findOne(Fairmint, { series_id });
     if (existing && existing._id) {
         updatedData.attributes = {
             ...get(existing, "attributes", {}),
