@@ -193,7 +193,7 @@ export const handleStakeholder = async (id) => {
     const webHookUrl = `${API_URL}/ocp/reflectStakeholder?portalId=${issuerId}`;
     const body = {
         // use primary contact if the main name info not available
-        legal_name: get(stakeholder, "name.legal_name") || get(stakeholder, "primary_contact.name.legal_name"),
+        legal_name: get(stakeholder, "name.legal_name", null) || get(stakeholder, "primary_contact.name.legal_name"),
         firstname: get(stakeholder, "name.first_name", null) || get(stakeholder, "primary_contact.name.first_name"),
         lastname: get(stakeholder, "name.last_name", null) || get(stakeholder, "primary_contact.name.last_name"),
         stakeholder_id: get(stakeholder, "_id"),
