@@ -99,6 +99,11 @@ transactions.post("/issuance/stock-fairmint-reflection", async (req, res) => {
             ...data,
         };
 
+        // NOTE: we're overwriting custom_id by series_id to grab the value on chain.
+        // if we have conflicts in the future about custom_id we need to store
+        // series_id property inside the chain
+        incomingStockIssuance.custom_id = payload.series_id;
+
         await validateInputAgainstOCF(incomingStockIssuance, stockIssuanceSchema);
 
         await convertAndCreateIssuanceStockOnchain(contract, incomingStockIssuance);

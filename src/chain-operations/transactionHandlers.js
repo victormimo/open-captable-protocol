@@ -1,6 +1,6 @@
 import { convertBytes16ToUUID } from "../utils/convertUUID.js";
 import { createHistoricalTransaction } from "../db/operations/create.js";
-import { readFairmintDataByCustomId, readStakeholderById } from "../db/operations/read.js";
+import { readFairmintDataBySeriesId, readStakeholderById } from "../db/operations/read.js";
 import {
     updateStakeholderById,
     updateStockClassById,
@@ -30,6 +30,7 @@ const options = {
     minute: "2-digit",
     second: "2-digit",
 };
+
 export const handleStockIssuance = async (stock, issuerId, timestamp) => {
     const { id, object_type, security_id, params } = stock;
     console.log("StockIssuanceCreated Event Emitted!", id);
@@ -52,9 +53,12 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         consideration_text,
         security_law_exemptions,
     } = params;
-    const _custom_id = convertBytes16ToUUID(custom_id);
 
-    const fairmintData = await readFairmintDataByCustomId(_custom_id);
+    // The custom_id field from the stock object is being assigned to the variable _series_id
+    // to represent the series_id in this context.
+    const _series_id = convertBytes16ToUUID(custom_id);
+
+    const fairmintData = await readFairmintDataBySeriesId(_series_id);
 
     const sharePriceOCF = {
         amount: toDecimal(share_price).toString(),
@@ -93,7 +97,7 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         comments: comments,
         security_id: convertBytes16ToUUID(security_id),
         date: dateOCF,
-        custom_id: _custom_id,
+        custom_id: _series_id,
         stakeholder_id: stakeholder._id,
         board_approval_date,
         stockholder_approval_date,
@@ -110,14 +114,14 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         transactionType: "StockIssuance",
     });
 
-    const dollarAmount = Number(toDecimal(share_price)) * Number(toDecimal(quantity)); // TODO: Fix Test this calculation
+    const dollarAmount = Number(toDecimal(share_price)) * Number(toDecimal(quantity)); // do we need to store this dollarAmount on Fairmint
 
     if (fairmintData && fairmintData._id) {
         console.log({ fairmintData });
         // First, create series (or verify it's created)
         const seriesCreated = await reflectSeries({
             issuerId,
-            series_id: createdStockIssuance.custom_id,
+            series_id: _series_id,
             stock_class_id: get(createdStockIssuance, "stock_class_id", null),
             stock_plan_id: get(createdStockIssuance, "stock_plan_id", null),
             series_name: get(fairmintData, "attributes.series_name"),
@@ -127,7 +131,7 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
 
         const body = {
             stakeholder_id: stakeholder._id,
-            series_id: _custom_id,
+            series_id: _series_id,
             amount: dollarAmount,
             number_of_shares: toDecimal(quantity).toString(),
             series_type: SERIES_TYPE.SHARES,
@@ -136,7 +140,7 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         console.log({ body });
         console.log("Reflecting Stock Issuance into fairmint...");
         console.log("issuerId: ", issuerId);
-        console.log("custom_id", _custom_id);
+        console.log("series_id", _series_id);
         const webHookUrl = `${API_URL}/ocp/reflectInvestment?portalId=${issuerId}`;
         const resp = await axios.post(webHookUrl, body);
         console.log("Successfully reflected Stock Issuance on Fairmint");
@@ -181,6 +185,7 @@ export const handleStockTransfer = async (stock, issuerId) => {
         createdStockTransfer
     );
 };
+
 export const handleStakeholder = async (id) => {
     console.log("StakeholderCreated Event Emitted!", id);
     const incomingStakeholderId = convertBytes16ToUUID(id);
