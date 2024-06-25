@@ -396,7 +396,7 @@ transactions.post("/issuance/equity-compensation-fairmint-reflection", async (re
     const { error, value: payload } = schema.validate(req.body);
 
     if (error) {
-        res.status(400).send({
+        return res.status(400).send({
             error: getJoiErrorMessage(error),
         });
     }
@@ -498,7 +498,7 @@ transactions.post("/issuance/convertible-fairmint-reflection", async (req, res) 
     const { error, value: payload } = schema.validate(req.body);
 
     if (error) {
-        res.status(400).send({
+        return res.status(400).send({
             error: getJoiErrorMessage(error),
         });
     }
@@ -558,4 +558,5 @@ transactions.post("/issuance/convertible-fairmint-reflection", async (req, res) 
         res.status(500).send(`${error}`);
     }
 });
+
 export default transactions;
