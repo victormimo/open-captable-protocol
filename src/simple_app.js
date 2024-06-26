@@ -97,7 +97,11 @@ app.listen(PORT, async () => {
                 console.log({ contract, provider, libraries, issuerId: issuer._id });
 
                 // Initialize listener for this contract
-                startOnchainListeners(contract, provider, issuer._id, libraries);
+                try {
+                    startOnchainListeners(contract, provider, issuer._id, libraries);
+                } catch (error) {
+                    console.error(`Error inside transaction listener for Issuer ${issuer._id}:`, error);
+                }
             }
         }
     }
