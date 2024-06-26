@@ -12,7 +12,7 @@ const runDeseed = async () => {
         console.warn(chalk.yellow(`⚠️  Are you sure that you want to deseed the following DB: ${process.env.DATABASE_URL}? (y/n)`));
         rl.question("", async (answer) => {
             if (answer.toLowerCase() === "y") {
-                // await deseedDatabase();
+                await deseedDatabase();
                 console.log(chalk.green("✅ Database deseeded successfully."));
             } else {
                 console.log(chalk.red("❌ Deseeding aborted."));
