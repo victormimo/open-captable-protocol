@@ -436,6 +436,7 @@ transactions.post("/issuance/equity-compensation-fairmint-reflection", async (re
             exercise_price: get(incomingEquityCompensationIssuance, "exercise_price.amount", 0),
             compensation_type: get(incomingEquityCompensationIssuance, "compensation_type", ""),
         };
+
         console.log({ body });
         console.log("Reflecting Equity Compensation Issuance into fairmint...");
         console.log("issuerId: ", issuerId);
