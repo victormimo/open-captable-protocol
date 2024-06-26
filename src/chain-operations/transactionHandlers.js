@@ -119,22 +119,22 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
     if (fairmintData && fairmintData._id) {
         console.log({ fairmintData });
         // First, create series (or verify it's created)
-        const seriesCreated = await reflectSeries({
+        const seriesCreatedResp = await reflectSeries({
             issuerId,
             series_id: _series_id,
             stock_class_id: get(createdStockIssuance, "stock_class_id", null),
             stock_plan_id: get(createdStockIssuance, "stock_plan_id", null),
             series_name: get(fairmintData, "attributes.series_name"),
+            series_type: SERIES_TYPE.SHARES,
         });
 
-        console.log("series created response ", seriesCreated);
+        console.log("series created response ", seriesCreatedResp);
 
         const body = {
             stakeholder_id: stakeholder._id,
             series_id: _series_id,
             amount: dollarAmount,
             number_of_shares: toDecimal(quantity).toString(),
-            series_type: SERIES_TYPE.SHARES,
         };
 
         console.log({ body });
