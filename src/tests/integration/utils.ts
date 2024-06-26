@@ -21,14 +21,12 @@ export const runLocalServer = async (deseed) => {
     }
     console.log("starting server");
     _server = await startServer(false);
-}
-
+};
 
 export const shutdownLocalServer = async () => {
     console.log("shutting down server");
     await shutdownServer(_server);
-}
-
+};
 
 const deleteAllTransactions = async () => {
     for (const ModelType of Object.values(typeToModelType)) {
@@ -55,6 +53,5 @@ export const deseedDatabase = async () => {
     const connection = await connectDB();
     console.log("Deseeding from database: ", connection.name);
     await deleteAll();
-    console.log("✅ Database deseeded successfully");
     await connection.close();
 };
