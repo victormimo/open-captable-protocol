@@ -48,7 +48,7 @@ jobs:
             docker pull 009755999482.dkr.ecr.us-east-2.amazonaws.com/ocp:prod
             docker stop ocp-prod || true
             docker rm ocp-prod || true
-            docker run --name ocp-prod -d -p 8080:8080 \
+            docker run --name ocp-prod -d -p 8080:8080 --restart always \
             -e NODE_ENV='production' \
             -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
             -e RPC_URL="${{ secrets.RPC_URL }}" \
