@@ -93,43 +93,46 @@ async function processEventQueue() {
     const sortedEventQueue = eventQueue.sort((a, b) => a.timestamp - b.timestamp);
     while (sortedEventQueue.length > 0) {
         const event = eventQueue[0];
-        switch (event.type) {
-            case "STAKEHOLDER_CREATED":
-                await handleStakeholder(event.data);
-                break;
-            case "STOCK_CLASS_CREATED":
-                await handleStockClass(event.data);
-                break;
-            case "ISSUER_AUTHORIZED_SHARES_ADJUSTMENT":
-                await handleIssuerAuthorizedSharesAdjusted(event.data, event.issuerId, event.timestamp);
-                break;
-            case "STOCK_CLASS_AUTHORIZED_SHARES_ADJUSTMENT":
-                await handleStockClassAuthorizedSharesAdjusted(event.data, event.issuerId, event.timestamp);
-                break;
-            case "STOCK_ACCEPTANCE":
-                await handleStockAcceptance(event.data, event.issuerId, event.timestamp);
-                break;
-            case "STOCK_CANCELLATION":
-                await handleStockCancellation(event.data, event.issuerId, event.timestamp);
-                break;
-            case "STOCK_ISSUANCE":
-                await handleStockIssuance(event.data, event.issuerId, event.timestamp);
-                break;
-            case "STOCK_REISSUANCE":
-                await handleStockReissuance(event.data, event.issuerId, event.timestamp);
-                break;
-            case "STOCK_REPURCHASE":
-                await handleStockRepurchase(event.data, event.issuerId, event.timestamp);
-                break;
-            case "STOCK_RETRACTION":
-                await handleStockRetraction(event.data, event.issuerId, event.timestamp);
-                break;
-            case "STOCK_TRANSFER":
-                await handleStockTransfer(event.data, event.issuerId, event.timestamp);
-                break;
-            case "INVALID":
-                throw new Error("Invalid transaction type");
-                break;
+        try {
+            switch (event.type) {
+                case "STAKEHOLDER_CREATED":
+                    await handleStakeholder(event.data);
+                    break;
+                case "STOCK_CLASS_CREATED":
+                    await handleStockClass(event.data);
+                    break;
+                case "ISSUER_AUTHORIZED_SHARES_ADJUSTMENT":
+                    await handleIssuerAuthorizedSharesAdjusted(event.data, event.issuerId, event.timestamp);
+                    break;
+                case "STOCK_CLASS_AUTHORIZED_SHARES_ADJUSTMENT":
+                    await handleStockClassAuthorizedSharesAdjusted(event.data, event.issuerId, event.timestamp);
+                    break;
+                case "STOCK_ACCEPTANCE":
+                    await handleStockAcceptance(event.data, event.issuerId, event.timestamp);
+                    break;
+                case "STOCK_CANCELLATION":
+                    await handleStockCancellation(event.data, event.issuerId, event.timestamp);
+                    break;
+                case "STOCK_ISSUANCE":
+                    await handleStockIssuance(event.data, event.issuerId, event.timestamp);
+                    break;
+                case "STOCK_REISSUANCE":
+                    await handleStockReissuance(event.data, event.issuerId, event.timestamp);
+                    break;
+                case "STOCK_REPURCHASE":
+                    await handleStockRepurchase(event.data, event.issuerId, event.timestamp);
+                    break;
+                case "STOCK_RETRACTION":
+                    await handleStockRetraction(event.data, event.issuerId, event.timestamp);
+                    break;
+                case "STOCK_TRANSFER":
+                    await handleStockTransfer(event.data, event.issuerId, event.timestamp);
+                    break;
+                case "INVALID":
+                    throw new Error("Invalid transaction type");
+            }
+        } catch (error) {
+            console.error(`Error processing event of type ${event.type}:`, error);
         }
         sortedEventQueue.shift();
     }

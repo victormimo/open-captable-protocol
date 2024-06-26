@@ -31,8 +31,8 @@ import { upsertFairmintDataBySeriesId } from "../db/operations/update.js";
 import { SERIES_TYPE } from "../fairmint/enums.js";
 import { reflectSeries } from "../fairmint/reflectSeries.js";
 import get from "lodash/get";
-import { API_URL } from "../chain-operations/utils.js";
-import axios from "axios";
+import { reflectInvestment } from "../fairmint/reflectInvestment.js";
+import { reflectGrant } from "../fairmint/reflectGrant.js";
 
 const transactions = Router();
 
@@ -419,32 +419,30 @@ transactions.post("/issuance/equity-compensation-fairmint-reflection", async (re
             return res.status(400).send({ error: "Stakeholder not found" });
         }
 
+        // TODO: check stakeholder exists on fairmint
+
         // save to DB
         const createdIssuance = await createEquityCompensationIssuance(incomingEquityCompensationIssuance);
+
         const seriesCreated = await reflectSeries({
             issuerId,
             series_id: payload.series_id,
             series_name: payload.series_name,
             series_type: SERIES_TYPE.GRANT,
         });
+
         console.log("series reflected response ", seriesCreated);
 
-        const body = {
+        const reflectGrantResponse = await reflectGrant({
+            issuerId,
             stakeholder_id: stakeholder._id,
             series_id: payload.series_id,
             token_amount: get(incomingEquityCompensationIssuance, "quantity", 0),
             exercise_price: get(incomingEquityCompensationIssuance, "exercise_price.amount", 0),
             compensation_type: get(incomingEquityCompensationIssuance, "compensation_type", ""),
-        };
+        });
 
-        console.log({ body });
-        console.log("Reflecting Equity Compensation Issuance into fairmint...");
-        console.log("issuerId: ", issuerId);
-        console.log("series_id", payload.series_id);
-        const webHookUrl = `${API_URL}/ocp/reflectGrant?portalId=${issuerId}`;
-        const resp = await axios.post(webHookUrl, body);
-        console.log("Successfully reflected Equity Compensation Issuance on Fairmint");
-        console.log("Fairmint response:", resp.data);
+        console.log("Reflected Grant Response:", reflectGrantResponse);
 
         res.status(200).send({ equityCompensationIssuance: createdIssuance });
     } catch (error) {
@@ -527,6 +525,8 @@ transactions.post("/issuance/convertible-fairmint-reflection", async (req, res) 
             return res.status(400).send({ error: "Stakeholder not found" });
         }
 
+        // TODO: check if stakeholder found in Fairmint
+
         // save to DB
         const createdIssuance = await createConvertibleIssuance(incomingConvertibleIssuance);
 
@@ -539,20 +539,13 @@ transactions.post("/issuance/convertible-fairmint-reflection", async (req, res) 
 
         console.log("series reflected response ", seriesCreated);
 
-        const body = {
+        const reflectInvestmentResponse = await reflectInvestment({
+            issuerId,
             stakeholder_id: stakeholder._id,
             series_id: payload.series_id,
             amount: get(incomingConvertibleIssuance, "investment_amount.amount", 0),
-        };
-
-        console.log({ body });
-        console.log("Reflecting Convertible Issuance into fairmint...");
-        console.log("issuerId: ", issuerId);
-        console.log("series_id", payload.series_id);
-        const webHookUrl = `${API_URL}/ocp/reflectInvestment?portalId=${issuerId}`;
-        const resp = await axios.post(webHookUrl, body);
-        console.log("Successfully reflected Convertible Issuance on Fairmint");
-        console.log("Fairmint response:", resp.data);
+        });
+        console.log("Reflected Investment Response:", reflectInvestmentResponse);
         // Note: this will have it's own listener in the future to check with Fairmint Obj and sync with Fairmint accordingly
 
         res.status(200).send({ convertibleIssuance: createdIssuance });
