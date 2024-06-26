@@ -425,8 +425,9 @@ transactions.post("/issuance/equity-compensation-fairmint-reflection", async (re
             issuerId,
             series_id: payload.series_id,
             series_name: payload.series_name,
+            series_type: SERIES_TYPE.GRANT,
         });
-        console.log("series created response ", seriesCreated);
+        console.log("series reflected response ", seriesCreated);
 
         const body = {
             stakeholder_id: stakeholder._id,
@@ -532,16 +533,17 @@ transactions.post("/issuance/convertible-fairmint-reflection", async (req, res) 
             issuerId,
             series_id: payload.series_id,
             series_name: payload.series_name,
+            series_type: SERIES_TYPE.FUNDRAISING,
         });
 
-        console.log("series created response ", seriesCreated);
+        console.log("series reflected response ", seriesCreated);
 
         const body = {
             stakeholder_id: stakeholder._id,
             series_id: payload.series_id,
             amount: get(incomingConvertibleIssuance, "investment_amount.amount", 0),
-            series_type: SERIES_TYPE.FUNDRAISING,
         };
+
         console.log({ body });
         console.log("Reflecting Convertible Issuance into fairmint...");
         console.log("issuerId: ", issuerId);
