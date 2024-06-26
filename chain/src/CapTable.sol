@@ -35,7 +35,7 @@ contract CapTable is ICapTable, AccessControlDefaultAdminRulesUpgradeable {
     /// @inheritdoc ICapTable
     bytes32 public constant override OPERATOR_ROLE = keccak256("OPERATOR");
 
-    event IssuerCreated(bytes16 indexed id, string indexed _name);
+    event IssuerCreated(bytes16 indexed id);
     event StakeholderCreated(bytes16 indexed id);
     event StockClassCreated(bytes16 indexed id, string indexed classType, uint256 indexed pricePerShare, uint256 initialSharesAuthorized);
 
@@ -55,14 +55,14 @@ contract CapTable is ICapTable, AccessControlDefaultAdminRulesUpgradeable {
         _disableInitializers();
     }
 
-    function initialize(bytes16 id, string memory name, uint256 initial_shares_authorized, address admin) external initializer {
+    function initialize(bytes16 id, uint256 initial_shares_authorized, address admin) external initializer {
         __AccessControlDefaultAdminRules_init(0 seconds, admin);
         _grantRole(ADMIN_ROLE, admin);
         _setRoleAdmin(ADMIN_ROLE, ADMIN_ROLE);
         _setRoleAdmin(OPERATOR_ROLE, ADMIN_ROLE);
 
-        issuer = Issuer(id, name, 0, initial_shares_authorized);
-        emit IssuerCreated(id, name);
+        issuer = Issuer(id, 0, initial_shares_authorized);
+        emit IssuerCreated(id);
     }
 
     /// @inheritdoc ICapTable

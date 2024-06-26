@@ -1,6 +1,6 @@
 import { convertBytes16ToUUID } from "../utils/convertUUID.js";
 import { createHistoricalTransaction } from "../db/operations/create.js";
-import { readStakeholderById } from "../db/operations/read.js";
+import { readFairmintDataBySeriesId, readStakeholderById } from "../db/operations/read.js";
 import {
     updateStakeholderById,
     updateStockClassById,
@@ -14,8 +14,13 @@ import {
     upsertStockClassAuthorizedSharesAdjustment,
     upsertIssuerAuthorizedSharesAdjustment,
 } from "../db/operations/update.js";
+import get from "lodash/get";
 
+import { reflectSeries } from "../fairmint/reflectSeries.js";
 import { toDecimal } from "../utils/convertToFixedPointDecimals.js";
+import { SERIES_TYPE } from "../fairmint/enums.js";
+import { reflectStakeholder } from "../fairmint/reflectStakeholder.js";
+import { reflectInvestment } from "../fairmint/reflectInvestment.js";
 
 const options = {
     year: "numeric",
@@ -25,9 +30,11 @@ const options = {
     minute: "2-digit",
     second: "2-digit",
 };
+
 export const handleStockIssuance = async (stock, issuerId, timestamp) => {
     const { id, object_type, security_id, params } = stock;
     console.log("StockIssuanceCreated Event Emitted!", id);
+
     const {
         stock_class_id,
         stock_plan_id,
@@ -46,6 +53,13 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         consideration_text,
         security_law_exemptions,
     } = params;
+
+    // The custom_id field from the stock object is being assigned to the variable _series_id
+    // to represent the series_id in this context.
+    const _series_id = convertBytes16ToUUID(custom_id);
+
+    const fairmintData = await readFairmintDataBySeriesId(_series_id);
+
     const sharePriceOCF = {
         amount: toDecimal(share_price).toString(),
         currency: "USD",
@@ -62,6 +76,7 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
     ];
 
     const stakeholder = await readStakeholderById(convertBytes16ToUUID(stakeholder_id));
+
     if (!stakeholder) {
         throw Error("Stakeholder does not exist");
     }
@@ -82,7 +97,7 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         comments: comments,
         security_id: convertBytes16ToUUID(security_id),
         date: dateOCF,
-        custom_id, // Not UUID
+        custom_id: _series_id,
         stakeholder_id: stakeholder._id,
         board_approval_date,
         stockholder_approval_date,
@@ -98,6 +113,33 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         issuer: issuerId,
         transactionType: "StockIssuance",
     });
+    console.log("here");
+    const dollarAmount = Number(toDecimal(share_price)) * Number(toDecimal(quantity)); // do we need to store this dollarAmount on Fairmint
+
+    if (fairmintData && fairmintData._id) {
+        console.log({ fairmintData });
+        // First, create series (or verify it's created)
+        const seriesCreatedResp = await reflectSeries({
+            issuerId,
+            series_id: _series_id,
+            stock_class_id: get(createdStockIssuance, "stock_class_id", null),
+            stock_plan_id: get(createdStockIssuance, "stock_plan_id", null),
+            series_name: get(fairmintData, "attributes.series_name"),
+            series_type: SERIES_TYPE.SHARES,
+        });
+
+        console.log("series created response ", seriesCreatedResp);
+
+        const reflectedInvestmentResp = await reflectInvestment({
+            issuerId,
+            stakeholder_id: stakeholder._id,
+            series_id: _series_id,
+            amount: dollarAmount,
+            number_of_shares: toDecimal(quantity).toString(),
+        });
+
+        console.log("stock investment response:", reflectedInvestmentResp);
+    }
 
     console.log(
         `✅ | StockIssuance confirmation onchain with date ${new Date(Date.now()).toLocaleDateString("en-US", options)}`,
@@ -137,11 +179,21 @@ export const handleStockTransfer = async (stock, issuerId) => {
         createdStockTransfer
     );
 };
+
 export const handleStakeholder = async (id) => {
-    console.log("StakeholderCreated Event Emitted!", id);
-    const incomingStakeholderId = convertBytes16ToUUID(id);
-    const stakeholder = await updateStakeholderById(incomingStakeholderId, { is_onchain_synced: true });
-    console.log("✅ | Stakeholder confirmation onchain ", stakeholder);
+    try {
+        console.log("StakeholderCreated Event Emitted!", id);
+        const incomingStakeholderId = convertBytes16ToUUID(id);
+        const stakeholder = await updateStakeholderById(incomingStakeholderId, { is_onchain_synced: true });
+
+        if (!stakeholder) {
+            throw Error("handleStakeholder: Stakeholder does not exist throw Error ");
+        }
+
+        await reflectStakeholder({ stakeholder, issuerId: stakeholder.issuer });
+    } catch (error) {
+        throw Error("Error handing Stakeholder On Chain", error);
+    }
 };
 
 export const handleStockClass = async (id) => {

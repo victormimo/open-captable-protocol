@@ -3,7 +3,7 @@ import { v4 as uuid } from "uuid";
 
 import issuerSchema from "../../ocf/schema/objects/Issuer.schema.json" assert { type: "json" };
 import deployCapTable from "../chain-operations/deployCapTable.js";
-import { createIssuer } from "../db/operations/create.js";
+import { createFairmintData, createIssuer } from "../db/operations/create.js";
 import { countIssuers, readIssuerById } from "../db/operations/read.js";
 import { convertUUIDToBytes16 } from "../utils/convertUUID.js";
 import validateInputAgainstOCF from "../utils/validateInputAgainstSchema.js";
@@ -56,11 +56,7 @@ issuer.post("/create", async (req, res) => {
         }
         const issuerIdBytes16 = convertUUIDToBytes16(incomingIssuerToValidate.id);
         console.log("💾 | Issuer id in bytes16 ", issuerIdBytes16);
-        const { address, deployHash } = await deployCapTable(
-            issuerIdBytes16,
-            incomingIssuerToValidate.legal_name,
-            incomingIssuerToValidate.initial_shares_authorized
-        );
+        const { address, deployHash } = await deployCapTable(issuerIdBytes16, incomingIssuerToValidate.initial_shares_authorized);
 
         const incomingIssuerForDB = {
             ...incomingIssuerToValidate,
@@ -71,6 +67,51 @@ issuer.post("/create", async (req, res) => {
         const issuer = await createIssuer(incomingIssuerForDB);
 
         console.log("✅ | Issuer created offchain:", issuer);
+
+        res.status(200).send({ issuer });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send(`${error}`);
+    }
+});
+
+issuer.post("/create-fairmint-reflection", async (req, res) => {
+    try {
+        // OCF doesn't allow extra fields in their validation
+        const incomingIssuerToValidate = {
+            id: uuid(),
+            object_type: "ISSUER",
+            ...req.body,
+        };
+
+        console.log("⏳ | Issuer to validate", incomingIssuerToValidate);
+
+        await validateInputAgainstOCF(incomingIssuerToValidate, issuerSchema);
+
+        // in case issuer already exists, return it
+        // const exists = await readIssuerById(incomingIssuerToValidate.id);
+        // if (exists && exists._id) {
+        //     return res.status(409).send({ issuer: exists });
+        // }
+
+        const issuerIdBytes16 = convertUUIDToBytes16(incomingIssuerToValidate.id);
+
+        console.log("💾 | Issuer id in bytes16 ", issuerIdBytes16);
+
+        const { address, deployHash } = await deployCapTable(issuerIdBytes16, incomingIssuerToValidate.initial_shares_authorized);
+
+        const incomingIssuerForDB = {
+            ...incomingIssuerToValidate,
+            deployed_to: address,
+            tx_hash: deployHash,
+        };
+
+        const issuer = await createIssuer(incomingIssuerForDB);
+        // saving Fairmint Obj by issuer id so we can retrieve it later on event listener
+        console.log("🔥 | Creating Fairmint Data for issuer:", issuer._id);
+        await createFairmintData({ id: issuer._id });
+
+        console.log("✅ | Issuer created off-chain:", issuer);
 
         res.status(200).send({ issuer });
     } catch (error) {

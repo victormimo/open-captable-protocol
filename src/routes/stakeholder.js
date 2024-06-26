@@ -85,6 +85,40 @@ stakeholder.post("/create", async (req, res) => {
     }
 });
 
+/// @dev: stakeholder is always created onchain, then to the DB
+stakeholder.post("/create-fairmint-reflection", async (req, res) => {
+    const { contract } = req;
+    const { data, issuerId } = req.body;
+
+    try {
+        const issuer = await readIssuerById(issuerId);
+
+        // OCF doesn't allow extra fields in their validation
+        const incomingStakeholderToValidate = {
+            id: uuid(),
+            object_type: "STAKEHOLDER",
+            ...data,
+        };
+
+        const incomingStakeholderForDB = {
+            ...incomingStakeholderToValidate,
+            issuer: issuer._id,
+        };
+
+        await validateInputAgainstOCF(incomingStakeholderToValidate, stakeholderSchema);
+
+        await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB);
+
+        const stakeholder = await createStakeholder(incomingStakeholderForDB);
+
+        console.log("✅ | Stakeholder created offchain:", stakeholder);
+
+        res.status(200).send({ stakeholder });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send(`${error}`);
+    }
+});
 stakeholder.post("/add-wallet", async (req, res) => {
     const { contract } = req;
     const { id, wallet } = req.body;

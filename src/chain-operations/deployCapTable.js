@@ -9,7 +9,7 @@ import getProvider from "./getProvider.js";
 
 setupEnv();
 
-async function deployCapTable(issuerId, issuerName, initial_shares_authorized) {
+async function deployCapTable(issuerId, initial_shares_authorized) {
     const WALLET_PRIVATE_KEY = process.env.PRIVATE_KEY;
 
     const provider = getProvider();
@@ -27,7 +27,7 @@ async function deployCapTable(issuerId, issuerName, initial_shares_authorized) {
 
     const capTableFactory = new ethers.Contract(factoryAddress, CAP_TABLE_FACTORY.abi, wallet);
 
-    const tx = await capTableFactory.createCapTable(issuerId, issuerName, toScaledBigNumber(initial_shares_authorized));
+    const tx = await capTableFactory.createCapTable(issuerId, toScaledBigNumber(initial_shares_authorized));
     await tx.wait();
 
     const capTableCount = await capTableFactory.getCapTableCount();

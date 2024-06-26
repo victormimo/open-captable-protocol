@@ -5,6 +5,9 @@ import { convertAndReflectStockClassOnchain, getStockClassById, getTotalNumberOf
 import { createStockClass } from "../db/operations/create.js";
 import { readIssuerById, readStockClassById } from "../db/operations/read.js";
 import validateInputAgainstOCF from "../utils/validateInputAgainstSchema.js";
+import { getJoiErrorMessage } from "../chain-operations/utils.js";
+import Joi from "joi";
+import { createFairmintData } from "../db/operations/create.js";
 
 const stockClass = Router();
 
@@ -62,6 +65,7 @@ stockClass.post("/create", async (req, res) => {
         if (exists && exists._id) {
             return res.status(200).send({ stockClass: exists });
         }
+
         await convertAndReflectStockClassOnchain(contract, incomingStockClassForDB);
 
         const stockClass = await createStockClass(incomingStockClassForDB);

@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "./CapTable.t.sol";
 
+
 contract AdjustmentTest is CapTableTest {
     function testAdjustIssuerAuthorizedSharesBelowIssuedFails() public {
         // Create stock class and stakeholder
@@ -24,7 +25,7 @@ contract AdjustmentTest is CapTableTest {
         capTable.adjustIssuerAuthorizedShares(newIssuerSharesAuthorized, new string[](0), "2023-01-01", "2023-01-02");
 
         // Assert that the issuer authorized shares have been updated
-        (, , , uint256 sharesAuthorized) = capTable.issuer();
+        (, , uint256 sharesAuthorized) = capTable.issuer();
         assertEq(sharesAuthorized, newIssuerSharesAuthorized);
     }
 

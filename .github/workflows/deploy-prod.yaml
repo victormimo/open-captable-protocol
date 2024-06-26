@@ -1,0 +1,60 @@
+name: Deploy to AWS Lightsail Prod Instance
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    environment: prod
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          submodules: true  # Ensure submodules are checked out
+          fetch-depth: 0  # Ensure the .git directory is available
+          
+      - name: Create .env file
+        run: touch .env
+
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Build Docker image
+        run: docker build --no-cache -t 009755999482.dkr.ecr.us-east-2.amazonaws.com/ocp:prod -f Dockerfile.prod .
+
+      - name: Authenticate with Amazon ECR
+        run: aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin 009755999482.dkr.ecr.us-east-2.amazonaws.com
+
+      - name: Tag and push Docker image to Amazon ECR
+        run:
+          docker push 009755999482.dkr.ecr.us-east-2.amazonaws.com/ocp:prod
+
+      - name: Deploy to AWS Lightsail
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.LIGHTSAIL_INSTANCE_PUBLIC_IP_PROD }}
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin 009755999482.dkr.ecr.us-east-2.amazonaws.com
+            docker pull 009755999482.dkr.ecr.us-east-2.amazonaws.com/ocp:prod
+            docker stop ocp-prod || true
+            docker rm ocp-prod || true
+            docker run --name ocp-prod -d -p 8080:8080 --restart always \
+            -e NODE_ENV='production' \
+            -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+            -e RPC_URL="${{ secrets.RPC_URL }}" \
+            -e CHAIN_ID="${{ secrets.CHAIN_ID }}" \
+            -e PORT=8080 \
+            -e PRIVATE_KEY="${{ secrets.PRIVATE_KEY }}" \
+            -e ETHERSCAN_L2_API_KEY="${{ secrets.ETHERSCAN_L2_API_KEY }}" \
+            -v /home/ubuntu/global-bundle.pem:/global-bundle.pem \
+            009755999482.dkr.ecr.us-east-2.amazonaws.com/ocp:prod

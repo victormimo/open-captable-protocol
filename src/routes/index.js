@@ -8,7 +8,7 @@ import processManifest from "../utils/processManifest.js";
 const router = Router();
 
 router.get("/", async (req, res) => {
-    console.log("Welcome to TAP");
+    console.log("Welcome to the future of Captables, old man 🧠");
     res.status(200).send(`Welcome to the future of Transfer Agents 💸`);
 });
 

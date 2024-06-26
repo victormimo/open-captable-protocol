@@ -10,7 +10,6 @@ contract CapTableTest is Test {
     CapTableFactory public factory;
     CapTable public capTable;
     uint256 public issuerInitialSharesAuthorized = 1000000;
-    string public issuerName = "Winston, Inc.";
     bytes16 issuerId = 0xd3373e0a4dd9430f8a563281f2800e1e;
 
     function setUp() public {
@@ -18,7 +17,7 @@ contract CapTableTest is Test {
 
         factory = new CapTableFactory(address(capTableImplementation));
 
-        capTable = CapTable(factory.createCapTable(issuerId, issuerName, issuerInitialSharesAuthorized));
+        capTable = CapTable(factory.createCapTable(issuerId, issuerInitialSharesAuthorized));
     }
 
     // HELPERS //
