@@ -45,7 +45,7 @@ const chainMiddleware = (req, res, next) => {
 const contractMiddleware = async (req, res, next) => {
     if (!req.body.issuerId) {
         console.log("❌ | No issuer ID");
-        res.status(400).send("issuerId is required");
+        return res.status(400).send("issuerId is required");
     }
 
     // fetch issuer to ensure it exists
@@ -104,5 +104,11 @@ app.listen(PORT, async () => {
                 }
             }
         }
+    }
+});
+app.on("error", (err) => {
+    console.error(err);
+    if (err.code === "EADDRINUSE") {
+        console.log(`Port ${PORT} is already in use.`);
     }
 });
