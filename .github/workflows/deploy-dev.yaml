@@ -49,7 +49,7 @@ jobs:
             docker pull 009755999482.dkr.ecr.us-east-2.amazonaws.com/ocp:dev
             docker stop ocp-dev || true
             docker rm ocp-dev || true
-            docker run --name ocp-dev -d -p 8080:8080 --restart always \
+            docker run --name ocp-dev -d -p 8080:8080 \
             -e NODE_ENV='development' \
             -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
             -e RPC_URL="${{ secrets.RPC_URL }}" \
