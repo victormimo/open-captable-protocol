@@ -126,6 +126,7 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
             stock_plan_id: get(createdStockIssuance, "stock_plan_id", null),
             series_name: get(fairmintData, "attributes.series_name"),
             series_type: SERIES_TYPE.SHARES,
+            price_per_share: get(sharePriceOCF, "amount", null),
         });
 
         console.log("series created response ", seriesCreatedResp);
