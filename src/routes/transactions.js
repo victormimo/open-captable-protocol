@@ -540,11 +540,13 @@ transactions.post("/issuance/convertible-fairmint-reflection", async (req, res) 
         console.log("series reflected response ", seriesCreated);
 
         const reflectInvestmentResponse = await reflectInvestment({
+            id: incomingConvertibleIssuance.id,
             issuerId,
             stakeholder_id: stakeholder._id,
             series_id: payload.series_id,
             amount: get(incomingConvertibleIssuance, "investment_amount.amount", 0),
         });
+
         console.log("Reflected Investment Response:", reflectInvestmentResponse);
         // Note: this will have it's own listener in the future to check with Fairmint Obj and sync with Fairmint accordingly
 

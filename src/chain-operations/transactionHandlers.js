@@ -113,11 +113,10 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         issuer: issuerId,
         transactionType: "StockIssuance",
     });
-    console.log("here");
+
     const dollarAmount = Number(toDecimal(share_price)) * Number(toDecimal(quantity)); // do we need to store this dollarAmount on Fairmint
 
     if (fairmintData && fairmintData._id) {
-        console.log({ fairmintData });
         // First, create series (or verify it's created)
         const seriesCreatedResp = await reflectSeries({
             issuerId,
@@ -131,6 +130,7 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         console.log("series created response ", seriesCreatedResp);
 
         const reflectedInvestmentResp = await reflectInvestment({
+            id: _id,
             issuerId,
             stakeholder_id: stakeholder._id,
             series_id: _series_id,
