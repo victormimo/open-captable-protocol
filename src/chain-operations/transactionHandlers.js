@@ -82,8 +82,6 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         throw Error("Stakeholder does not exist on OCP");
     }
 
-    await checkStakeholderExistsOnFairmint({ stakeholder_id: stakeholder._id, portal_id: issuerId });
-
     const _id = convertBytes16ToUUID(id);
     const createdStockIssuance = await upsertStockIssuanceById(_id, {
         _id,

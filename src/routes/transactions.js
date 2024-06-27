@@ -125,6 +125,8 @@ transactions.post("/issuance/stock-fairmint-reflection", async (req, res) => {
             return res.status(404).send({ error: "Stock class not found on OCP" });
         }
 
+        await checkStakeholderExistsOnFairmint({ stakeholder_id: stakeholder._id, portal_id: issuerId });
+
         await convertAndCreateIssuanceStockOnchain(contract, incomingStockIssuance);
 
         await upsertFairmintDataBySeriesId(payload.series_id, {
