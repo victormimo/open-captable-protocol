@@ -46,6 +46,10 @@ jobs:
           script: |
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin 009755999482.dkr.ecr.us-east-2.amazonaws.com
             docker pull 009755999482.dkr.ecr.us-east-2.amazonaws.com/ocp:prod
+
+            # Cleanup old Docker images and containers
+            docker system prune -af --volumes
+
             docker stop ocp-prod || true
             docker rm ocp-prod || true
             docker run --name ocp-prod -d -p 8080:8080 --restart always \
