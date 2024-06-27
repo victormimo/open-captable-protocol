@@ -24,7 +24,13 @@ import { convertAndCreateRetractionStockOnchain } from "../controllers/transacti
 import { convertAndCreateTransferStockOnchain } from "../controllers/transactions/transferController.js";
 import { createConvertibleIssuance, createEquityCompensationIssuance } from "../db/operations/create.js";
 
-import { readConvertibleIssuanceByCustomId, readIssuerById, readStakeholderById, readStockIssuanceByCustomId } from "../db/operations/read.js";
+import {
+    readConvertibleIssuanceByCustomId,
+    readIssuerById,
+    readStakeholderById,
+    readStockClassById,
+    readStockIssuanceByCustomId,
+} from "../db/operations/read.js";
 import validateInputAgainstOCF from "../utils/validateInputAgainstSchema.js";
 import { getJoiErrorMessage } from "../chain-operations/utils.js";
 import { upsertFairmintDataBySeriesId } from "../db/operations/update.js";
@@ -33,6 +39,7 @@ import { reflectSeries } from "../fairmint/reflectSeries.js";
 import get from "lodash/get";
 import { reflectInvestment } from "../fairmint/reflectInvestment.js";
 import { reflectGrant } from "../fairmint/reflectGrant.js";
+import { checkStakeholderExistsOnFairmint } from "../fairmint/checkStakeholder.js";
 
 const transactions = Router();
 
@@ -105,6 +112,18 @@ transactions.post("/issuance/stock-fairmint-reflection", async (req, res) => {
         incomingStockIssuance.custom_id = payload.series_id;
 
         await validateInputAgainstOCF(incomingStockIssuance, stockIssuanceSchema);
+
+        const stakeholder = await readStakeholderById(incomingStockIssuance.stakeholder_id);
+        const stockClass = await readStockClassById(incomingStockIssuance.stock_class_id);
+
+        // check if the stakeholder exists on OCP
+        if (!stakeholder || !stakeholder._id) {
+            return res.status(404).send({ error: "Stakeholder not found on OCP" });
+        }
+
+        if (!stockClass || !stockClass._id) {
+            return res.status(404).send({ error: "Stock class not found on OCP" });
+        }
 
         await convertAndCreateIssuanceStockOnchain(contract, incomingStockIssuance);
 
@@ -411,15 +430,20 @@ transactions.post("/issuance/equity-compensation-fairmint-reflection", async (re
             object_type: "TX_EQUITY_COMPENSATION_ISSUANCE",
             ...data,
         };
-        // TODO: fix ocf validation
+        // fix ocf validation
         // await validateInputAgainstOCF(incomingEquityCompensationIssuance, equityCompensationIssuanceSchema);
-        // check if the stakeholder exists
+
         const stakeholder = await readStakeholderById(incomingEquityCompensationIssuance.stakeholder_id);
+
+        // check if the stakeholder exists on OCP
         if (!stakeholder || !stakeholder._id) {
-            return res.status(400).send({ error: "Stakeholder not found" });
+            return res.status(404).send({ error: "Stakeholder not found on OCP" });
         }
 
-        // TODO: check stakeholder exists on fairmint
+        await checkStakeholderExistsOnFairmint({
+            stakeholder_id: stakeholder._id,
+            portal_id: issuerId,
+        });
 
         // save to DB
         const createdIssuance = await createEquityCompensationIssuance(incomingEquityCompensationIssuance);
@@ -522,10 +546,14 @@ transactions.post("/issuance/convertible-fairmint-reflection", async (req, res) 
         // check if the stakeholder exists
         const stakeholder = await readStakeholderById(incomingConvertibleIssuance.stakeholder_id);
         if (!stakeholder || !stakeholder._id) {
-            return res.status(400).send({ error: "Stakeholder not found" });
+            return res.status(400).send({ error: "Stakeholder not found on OCP" });
         }
 
-        // TODO: check if stakeholder found in Fairmint
+        // check stakeholder exists on fairmint
+        await checkStakeholderExistsOnFairmint({
+            stakeholder_id: stakeholder._id,
+            portal_id: issuerId,
+        });
 
         // save to DB
         const createdIssuance = await createConvertibleIssuance(incomingConvertibleIssuance);

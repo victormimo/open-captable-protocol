@@ -21,6 +21,7 @@ import { toDecimal } from "../utils/convertToFixedPointDecimals.js";
 import { SERIES_TYPE } from "../fairmint/enums.js";
 import { reflectStakeholder } from "../fairmint/reflectStakeholder.js";
 import { reflectInvestment } from "../fairmint/reflectInvestment.js";
+import { checkStakeholderExistsOnFairmint } from "../fairmint/checkStakeholder.js";
 
 const options = {
     year: "numeric",
@@ -78,8 +79,10 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
     const stakeholder = await readStakeholderById(convertBytes16ToUUID(stakeholder_id));
 
     if (!stakeholder) {
-        throw Error("Stakeholder does not exist");
+        throw Error("Stakeholder does not exist on OCP");
     }
+
+    await checkStakeholderExistsOnFairmint({ stakeholder_id: stakeholder._id, portal_id: issuerId });
 
     const _id = convertBytes16ToUUID(id);
     const createdStockIssuance = await upsertStockIssuanceById(_id, {
