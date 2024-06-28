@@ -351,10 +351,10 @@ transactions.post("/adjust/issuer/authorized-shares", async (req, res) => {
 
 transactions.post("/adjust/stock-class/authorized-shares", async (req, res) => {
     const { contract } = req;
-    const { data } = req.body;
+    const { data, issuerId } = req.body;
 
     try {
-        const { stockClassId } = data;
+        await readIssuerById(issuerId);
         const stockClassAuthorizedSharesAdjustment = {
             id: uuid(), // placeholder
             date: new Date().toISOString().slice(0, 10),
@@ -367,9 +367,14 @@ transactions.post("/adjust/stock-class/authorized-shares", async (req, res) => {
         // NOTE: schema validation does not include stakeholder, stockClassId, however these properties are needed on to be passed on chain
         await validateInputAgainstOCF(stockClassAuthorizedSharesAdjustment, stockClassAuthorizedSharesAdjustmentSchema);
 
+        const stockClass = await readStockClassById(stockClassAuthorizedSharesAdjustment.stock_class_id);
+
+        if (!stockClass || !stockClass._id) {
+            return res.status(404).send({ error: "Stock class not found on OCP" });
+        }
+
         await convertAndAdjustStockClassAuthorizedSharesOnchain(contract, {
             ...stockClassAuthorizedSharesAdjustment,
-            stockClassId,
         });
 
         res.status(200).send({ stockClassAdjustment: stockClassAuthorizedSharesAdjustment });
