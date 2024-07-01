@@ -15,7 +15,7 @@ jobs:
         with:
           submodules: true  # Ensure submodules are checked out
           fetch-depth: 0  # Ensure the .git directory is available
-          
+
       - name: Create .env file
         run: touch .env
 
@@ -32,7 +32,7 @@ jobs:
       - name: Build Docker image
         run: docker build --no-cache -t 009755999482.dkr.ecr.us-east-2.amazonaws.com/ocp:dev -f Dockerfile.dev .
 
-      - name: Authenticate with Ama`zon ECR
+      - name: Authenticate with Amazon ECR
         run: aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin 009755999482.dkr.ecr.us-east-2.amazonaws.com
 
       - name: Tag and push Docker image to Amazon ECR
@@ -45,11 +45,18 @@ jobs:
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            sudo su
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin 009755999482.dkr.ecr.us-east-2.amazonaws.com
             docker pull 009755999482.dkr.ecr.us-east-2.amazonaws.com/ocp:dev
+
+            # Cleanup old Docker images and containers
+            docker system prune -af --volumes
+
             docker stop ocp-dev || true
             docker rm ocp-dev || true
-            docker run --name ocp-dev -d -p 8080:8080 --restart always \
+
+            docker run --name ocp-dev -d -p 8080:8080 \
+            --restart always \
             -e NODE_ENV='development' \
             -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
             -e RPC_URL="${{ secrets.RPC_URL }}" \

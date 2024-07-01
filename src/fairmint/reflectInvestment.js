@@ -2,13 +2,14 @@ import axios from "axios";
 import get from "lodash/get";
 import { API_URL } from "../chain-operations/utils";
 
-export const reflectInvestment = async ({ issuerId, stakeholder_id, series_id, amount, number_of_shares = null }) => {
+export const reflectInvestment = async ({ id, issuerId, stakeholder_id, series_id, amount, number_of_shares = null }) => {
     const webHookUrl = `${API_URL}/ocp/reflectInvestment?portalId=${issuerId}`;
     try {
-        console.log("Reflecting Convertible Issuance into fairmint...");
-        console.log({ issuerId, stakeholder_id, series_id, amount });
+        console.log("Reflecting Investment fairmint...");
+        console.log({ id, issuerId, stakeholder_id, series_id, amount });
 
         const resp = await axios.post(webHookUrl, {
+            id,
             stakeholder_id,
             series_id,
             amount,

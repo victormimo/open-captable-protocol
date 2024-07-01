@@ -7,6 +7,7 @@ import { createFairmintData, createIssuer } from "../db/operations/create.js";
 import { countIssuers, readIssuerById } from "../db/operations/read.js";
 import { convertUUIDToBytes16 } from "../utils/convertUUID.js";
 import validateInputAgainstOCF from "../utils/validateInputAgainstSchema.js";
+import { checkPortal } from "../fairmint/checkPortal.js";
 
 const issuer = Router();
 
@@ -89,10 +90,12 @@ issuer.post("/create-fairmint-reflection", async (req, res) => {
         await validateInputAgainstOCF(incomingIssuerToValidate, issuerSchema);
 
         // in case issuer already exists, return it
-        // const exists = await readIssuerById(incomingIssuerToValidate.id);
-        // if (exists && exists._id) {
-        //     return res.status(409).send({ issuer: exists });
-        // }
+        const exists = await readIssuerById(incomingIssuerToValidate.id);
+        if (exists && exists._id) {
+            return res.status(200).send(`Issuer already exists with id: ${exists._id}`);
+        }
+        // check if portal exists on fairmint
+        await checkPortal({ portalId: incomingIssuerToValidate.id });
 
         const issuerIdBytes16 = convertUUIDToBytes16(incomingIssuerToValidate.id);
 

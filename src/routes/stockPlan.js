@@ -62,38 +62,4 @@ stockPlan.post("/create", async (req, res) => {
     }
 });
 
-/// @dev: stock plan is currently only created offchain
-stockPlan.post("/create-fairmint-reflection", async (req, res) => {
-    try {
-        const { custom_id, data, issuerId } = req.body;
-
-        if (!custom_id) {
-            return res.status(400).send({ error: "custom_id is required" });
-        }
-
-        const issuer = await readIssuerById(issuerId);
-
-        const incomingStockPlanToValidate = {
-            id: uuid(),
-            object_type: "STOCK_PLAN",
-            ...data,
-        };
-
-        const incomingStockPlanForDB = {
-            ...incomingStockPlanToValidate,
-            issuer: issuer._id,
-        };
-
-        await validateInputAgainstOCF(incomingStockPlanToValidate, stockPlanSchema);
-        const stockPlan = await createStockPlan(incomingStockPlanForDB);
-
-        console.log("✅ | Created Stock Plan in DB: ", stockPlan);
-
-        res.status(200).send({ stockPlan });
-    } catch (error) {
-        console.error(error);
-        res.status(500).send(`${error}`);
-    }
-});
-
 export default stockPlan;

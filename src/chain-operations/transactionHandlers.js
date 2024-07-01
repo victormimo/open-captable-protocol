@@ -21,6 +21,7 @@ import { toDecimal } from "../utils/convertToFixedPointDecimals.js";
 import { SERIES_TYPE } from "../fairmint/enums.js";
 import { reflectStakeholder } from "../fairmint/reflectStakeholder.js";
 import { reflectInvestment } from "../fairmint/reflectInvestment.js";
+import { checkStakeholderExistsOnFairmint } from "../fairmint/checkStakeholder.js";
 
 const options = {
     year: "numeric",
@@ -78,7 +79,7 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
     const stakeholder = await readStakeholderById(convertBytes16ToUUID(stakeholder_id));
 
     if (!stakeholder) {
-        throw Error("Stakeholder does not exist");
+        throw Error("Stakeholder does not exist on OCP");
     }
 
     const _id = convertBytes16ToUUID(id);
@@ -113,11 +114,10 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         issuer: issuerId,
         transactionType: "StockIssuance",
     });
-    console.log("here");
+
     const dollarAmount = Number(toDecimal(share_price)) * Number(toDecimal(quantity)); // do we need to store this dollarAmount on Fairmint
 
     if (fairmintData && fairmintData._id) {
-        console.log({ fairmintData });
         // First, create series (or verify it's created)
         const seriesCreatedResp = await reflectSeries({
             issuerId,
@@ -126,11 +126,13 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
             stock_plan_id: get(createdStockIssuance, "stock_plan_id", null),
             series_name: get(fairmintData, "attributes.series_name"),
             series_type: SERIES_TYPE.SHARES,
+            price_per_share: get(sharePriceOCF, "amount", null),
         });
 
         console.log("series created response ", seriesCreatedResp);
 
         const reflectedInvestmentResp = await reflectInvestment({
+            id: _id,
             issuerId,
             stakeholder_id: stakeholder._id,
             series_id: _series_id,
@@ -366,7 +368,7 @@ export const handleStockClassAuthorizedSharesAdjusted = async (stock, issuerId, 
         comments: stock.comments,
         issuer_id: convertBytes16ToUUID(stock.security_id),
         date: dateOCF,
-        new_shares_authorized: stock.new_shares_authorized,
+        new_shares_authorized: toDecimal(stock.new_shares_authorized).toString(),
         board_approval_date: stock.board_approval_date,
         stockholder_approval_date: stock.stockholder_approval_date,
 
