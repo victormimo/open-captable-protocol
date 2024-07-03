@@ -21,7 +21,11 @@ import { toDecimal } from "../utils/convertToFixedPointDecimals.js";
 import { SERIES_TYPE } from "../fairmint/enums.js";
 import { reflectStakeholder } from "../fairmint/reflectStakeholder.js";
 import { reflectInvestment } from "../fairmint/reflectInvestment.js";
-import { checkStakeholderExistsOnFairmint } from "../fairmint/checkStakeholder.js";
+
+const isUUID = (value) => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(value);
+};
 
 const options = {
     year: "numeric",
@@ -55,11 +59,8 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         security_law_exemptions,
     } = params;
 
-    // The custom_id field from the stock object is being assigned to the variable _series_id
-    // to represent the series_id in this context.
-    const _series_id = convertBytes16ToUUID(custom_id);
-
-    const fairmintData = await readFairmintDataBySeriesId(_series_id);
+    const series_id = convertBytes16ToUUID(get(comments, "0", null));
+    const fairmintData = await readFairmintDataBySeriesId(series_id);
 
     const sharePriceOCF = {
         amount: toDecimal(share_price).toString(),
@@ -95,10 +96,10 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         cost_basis: costBasisOCF,
         stock_legend_ids: convertBytes16ToUUID(stock_legend_ids),
         issuance_type: issuance_type,
-        comments: comments,
+        comments,
         security_id: convertBytes16ToUUID(security_id),
         date: dateOCF,
-        custom_id: _series_id,
+        custom_id,
         stakeholder_id: stakeholder._id,
         board_approval_date,
         stockholder_approval_date,
@@ -117,11 +118,11 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
 
     const dollarAmount = Number(toDecimal(share_price)) * Number(toDecimal(quantity)); // do we need to store this dollarAmount on Fairmint
 
-    if (fairmintData && fairmintData._id) {
+    if (isUUID(series_id) && fairmintData && fairmintData._id) {
         // First, create series (or verify it's created)
         const seriesCreatedResp = await reflectSeries({
             issuerId,
-            series_id: _series_id,
+            series_id,
             stock_class_id: get(createdStockIssuance, "stock_class_id", null),
             stock_plan_id: get(createdStockIssuance, "stock_plan_id", null),
             series_name: get(fairmintData, "attributes.series_name"),
@@ -135,7 +136,7 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
             id: _id,
             issuerId,
             stakeholder_id: stakeholder._id,
-            series_id: _series_id,
+            series_id,
             amount: dollarAmount,
             number_of_shares: toDecimal(quantity).toString(),
         });

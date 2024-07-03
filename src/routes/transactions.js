@@ -106,15 +106,11 @@ transactions.post("/issuance/stock-fairmint-reflection", async (req, res) => {
             ...data,
         };
 
-        // NOTE: we're overwriting custom_id by series_id to grab the value on chain.
-        // if we have conflicts in the future about custom_id we need to store
-        // series_id property inside the chain
-        incomingStockIssuance.custom_id = payload.series_id;
-
         await validateInputAgainstOCF(incomingStockIssuance, stockIssuanceSchema);
 
         const stakeholder = await readStakeholderById(incomingStockIssuance.stakeholder_id);
         const stockClass = await readStockClassById(incomingStockIssuance.stock_class_id);
+        incomingStockIssuance.comments = [payload.series_id, ...(incomingStockIssuance.comments || [])];
 
         // check if the stakeholder exists on OCP
         if (!stakeholder || !stakeholder._id) {
