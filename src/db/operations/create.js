@@ -13,6 +13,7 @@ import StockIssuance from "../objects/transactions/issuance/StockIssuance.js";
 import StockTransfer from "../objects/transactions/transfer/StockTransfer.js";
 import Fairmint from "../objects/Fairmint.js";
 import { save } from "./atomic.ts";
+import WarrantIssuance from "../objects/transactions/issuance/WarrantIssuance.js";
 
 export const createIssuer = (issuerData) => {
     return save(new Issuer(issuerData));
@@ -56,6 +57,10 @@ export const createEquityCompensationIssuance = (issuanceData) => {
 
 export const createConvertibleIssuance = (issuanceData) => {
     return save(new ConvertibleIssuance(issuanceData));
+};
+
+export const createWarrantIssuance = (issuanceData) => {
+    return save(new WarrantIssuance(issuanceData));
 };
 
 export const createStockTransfer = (stockTransferData) => {
