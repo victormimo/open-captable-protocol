@@ -674,13 +674,15 @@ transactions.post("/issuance/warrant-fairmint-reflection", async (req, res) => {
         });
 
         console.log("series reflected response ", seriesCreated);
+        const { quantity, purchase_price } = incomingWarrantIssuance;
+        const dollarAmount = Number(get(purchase_price, "amount", 1)) * Number(quantity);
 
         const reflectInvestmentResponse = await reflectInvestment({
             id: incomingWarrantIssuance.id,
             issuerId,
             stakeholder_id: stakeholder._id,
             series_id: payload.series_id,
-            amount: get(incomingWarrantIssuance, "investment_amount.amount", 0),
+            amount: dollarAmount,
         });
 
         console.log("Reflected Investment Response:", reflectInvestmentResponse);
