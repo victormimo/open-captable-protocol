@@ -9,10 +9,11 @@ addFormats(ajv); // To support formats like date-time
 const schemaDirPath = path.join("__dirname", "../../ocf/schema");
 
 function replaceRemoteUrlLocally(remoteUrl) {
-    const formattedUrl = remoteUrl.replace(
-        "https://raw.githubusercontent.com/Open-Cap-Table-Coalition/Open-Cap-Format-OCF/main/schema",
-        schemaDirPath
-    );
+    const formattedUrl = remoteUrl
+        .replace("https://raw.githubusercontent.com/Open-Cap-Table-Coalition/Open-Cap-Format-OCF/main/schema", schemaDirPath)
+        .replace("https://raw.githubusercontent.com/Open-Cap-Format-OCF/main/schema", schemaDirPath)
+        .replace("https://opencaptablecoalition.com/schema", schemaDirPath)
+        .replace("https://raw.githubusercontent.com/sannasi/Open-Cap-Format-OCF/main/schema", schemaDirPath);
     return path.join("__dirname", formattedUrl);
 }
 
@@ -40,6 +41,7 @@ async function fetchRefsInSchema(schema) {
             // Handle nested oneOf, allOf, etc. inside properties
             for (const keyword of ["allOf", "anyOf", "oneOf", "not"]) {
                 if (prop[keyword]) {
+                    console.log("keyword: ", keyword);
                     for (const subSchema of prop[keyword]) {
                         await fetchRefsInSchema(subSchema);
                     }
@@ -63,6 +65,7 @@ async function fetchAndAddExternalSchema(schemaOrUrl) {
 
     // Check if the argument is a URL or a schema object
     if (typeof schemaOrUrl === "string") {
+        console.log("schemaOrUrl ", schemaOrUrl);
         // If it's a URL, fetch the schema
         let schemaPath = replaceRemoteUrlLocally(schemaOrUrl);
         // console.log("schemaPath ", schemaPath);
@@ -75,35 +78,42 @@ async function fetchAndAddExternalSchema(schemaOrUrl) {
     }
 
     // Check if the schema is already added to avoid infinite loops
-    if (ajv.getSchema(schema.$id)) return;
+    if (!schema || ajv.getSchema(schema.$id)) return;
 
     // If the schema has its own $ref references, fetch and add those first
     if (schema.$ref) {
         await fetchAndAddExternalSchema(schema.$ref);
     }
 
-    // If the schema has "allOf", "anyOf", "oneOf", or "not" keywords, handle those
+    // If the schema has "allOf", "anyOf", "oneOf", or "not" keywords, handle those3
     await fetchRefsInSchema(schema);
 
     // Handle $ref references inside properties
     if (schema.properties) {
         for (const propName in schema.properties) {
             const prop = schema.properties[propName];
-
             // Check for direct $ref in the property
             if (prop.$ref) {
                 await fetchAndAddExternalSchema(prop.$ref);
             }
 
             // Check for $ref inside 'items' of an array property
-            if (prop.type === "array" && prop.items && prop.items.$ref) {
-                await fetchAndAddExternalSchema(prop.items.$ref);
+            if (prop.type === "array" && prop.items) {
+                if (prop.items.$ref) {
+                    await fetchAndAddExternalSchema(prop.items.$ref);
+                } else if (prop.items.anyOf) {
+                    for (const subSchema of prop.items.anyOf) {
+                        console.log({ subSchema });
+                        await fetchAndAddExternalSchema(subSchema.$ref);
+                    }
+                }
             }
 
             // You can further extend this to handle other nested structures as needed
         }
     }
 
+    console.log(schema.$id);
     // After all references have been fetched and added, add the current schema to AJV
     ajv.addSchema(schema, schema.$id);
 }

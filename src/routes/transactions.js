@@ -7,7 +7,7 @@ import issuerAuthorizedSharesAdjustmentSchema from "../../ocf/schema/objects/tra
 import stockClassAuthorizedSharesAdjustmentSchema from "../../ocf/schema/objects/transactions/adjustment/StockClassAuthorizedSharesAdjustment.schema.json" assert { type: "json" };
 import stockCancellationSchema from "../../ocf/schema/objects/transactions/cancellation/StockCancellation.schema.json" assert { type: "json" };
 // import warrantIssuanceSchema from "../../ocf/schema/objects/transactions/issuance/warrantIssuance.schema.json" assert { type: "json" };
-// import convertibleIssuanceSchema from "../../ocf/schema/objects/transactions/issuance/ConvertibleIssuance.schema.json" assert { type: "json" };
+import convertibleIssuanceSchema from "../../ocf/schema/objects/transactions/issuance/ConvertibleIssuance.schema.json" assert { type: "json" };
 // import equityCompensationIssuanceSchema from "../../ocf/schema/objects/transactions/issuance/EquityCompensationIssuance.schema.json" assert { type: "json" };
 import stockIssuanceSchema from "../../ocf/schema/objects/transactions/issuance/StockIssuance.schema.json" assert { type: "json" };
 import stockReissuanceSchema from "../../ocf/schema/objects/transactions/reissuance/StockReissuance.schema.json" assert { type: "json" };
@@ -496,7 +496,7 @@ transactions.post("/issuance/convertible", async (req, res) => {
         };
 
         console.log("incomingConvertibleIssuance", incomingConvertibleIssuance);
-        // await validateInputAgainstOCF(incomingConvertibleIssuance, convertibleIssuanceSchema);
+        await validateInputAgainstOCF(incomingConvertibleIssuance, convertibleIssuanceSchema);
 
         // check if it exists
         const convertibleExists = await readConvertibleIssuanceByCustomId(data?.custom_id);
