@@ -9,11 +9,10 @@ addFormats(ajv); // To support formats like date-time
 const schemaDirPath = path.join("__dirname", "../../ocf/schema");
 
 function replaceRemoteUrlLocally(remoteUrl) {
-    const formattedUrl = remoteUrl
-        .replace("https://raw.githubusercontent.com/Open-Cap-Table-Coalition/Open-Cap-Format-OCF/main/schema", schemaDirPath)
-        .replace("https://raw.githubusercontent.com/Open-Cap-Format-OCF/main/schema", schemaDirPath)
-        .replace("https://opencaptablecoalition.com/schema", schemaDirPath)
-        .replace("https://raw.githubusercontent.com/sannasi/Open-Cap-Format-OCF/main/schema", schemaDirPath);
+    const formattedUrl = remoteUrl.replace(
+        "https://raw.githubusercontent.com/Open-Cap-Table-Coalition/Open-Cap-Format-OCF/main/schema",
+        schemaDirPath
+    );
     return path.join("__dirname", formattedUrl);
 }
 
@@ -41,7 +40,6 @@ async function fetchRefsInSchema(schema) {
             // Handle nested oneOf, allOf, etc. inside properties
             for (const keyword of ["allOf", "anyOf", "oneOf", "not"]) {
                 if (prop[keyword]) {
-                    console.log("keyword: ", keyword);
                     for (const subSchema of prop[keyword]) {
                         await fetchRefsInSchema(subSchema);
                     }
@@ -53,8 +51,10 @@ async function fetchRefsInSchema(schema) {
     // Handle $ref references inside "allOf", "anyOf", "oneOf", or "not" keywords
     for (const keyword of ["allOf", "anyOf", "oneOf", "not"]) {
         if (schema[keyword]) {
-            for (const subSchema of schema[keyword]) {
-                await fetchRefsInSchema(subSchema);
+            if (Array.isArray(schema[keyword])) {
+                for (const subSchema of schema[keyword]) {
+                    await fetchRefsInSchema(subSchema);
+                }
             }
         }
     }
@@ -65,13 +65,9 @@ async function fetchAndAddExternalSchema(schemaOrUrl) {
 
     // Check if the argument is a URL or a schema object
     if (typeof schemaOrUrl === "string") {
-        console.log("schemaOrUrl ", schemaOrUrl);
         // If it's a URL, fetch the schema
         let schemaPath = replaceRemoteUrlLocally(schemaOrUrl);
-        // console.log("schemaPath ", schemaPath);
-        const _schema = JSON.parse(fs.readFileSync(schemaPath, "utf-8"));
-        // console.log("_schema ", _schema);
-        schema = _schema;
+        schema = JSON.parse(fs.readFileSync(schemaPath, "utf-8"));
     } else {
         // If it's a schema object, use it directly
         schema = schemaOrUrl;
@@ -103,7 +99,6 @@ async function fetchAndAddExternalSchema(schemaOrUrl) {
                     await fetchAndAddExternalSchema(prop.items.$ref);
                 } else if (prop.items.anyOf) {
                     for (const subSchema of prop.items.anyOf) {
-                        console.log({ subSchema });
                         await fetchAndAddExternalSchema(subSchema.$ref);
                     }
                 }
@@ -113,7 +108,6 @@ async function fetchAndAddExternalSchema(schemaOrUrl) {
         }
     }
 
-    console.log(schema.$id);
     // After all references have been fetched and added, add the current schema to AJV
     ajv.addSchema(schema, schema.$id);
 }
