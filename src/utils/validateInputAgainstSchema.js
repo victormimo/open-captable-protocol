@@ -51,8 +51,10 @@ async function fetchRefsInSchema(schema) {
     // Handle $ref references inside "allOf", "anyOf", "oneOf", or "not" keywords
     for (const keyword of ["allOf", "anyOf", "oneOf", "not"]) {
         if (schema[keyword]) {
-            for (const subSchema of schema[keyword]) {
-                await fetchRefsInSchema(subSchema);
+            if (Array.isArray(schema[keyword])) {
+                for (const subSchema of schema[keyword]) {
+                    await fetchRefsInSchema(subSchema);
+                }
             }
         }
     }
@@ -65,39 +67,41 @@ async function fetchAndAddExternalSchema(schemaOrUrl) {
     if (typeof schemaOrUrl === "string") {
         // If it's a URL, fetch the schema
         let schemaPath = replaceRemoteUrlLocally(schemaOrUrl);
-        // console.log("schemaPath ", schemaPath);
-        const _schema = JSON.parse(fs.readFileSync(schemaPath, "utf-8"));
-        // console.log("_schema ", _schema);
-        schema = _schema;
+        schema = JSON.parse(fs.readFileSync(schemaPath, "utf-8"));
     } else {
         // If it's a schema object, use it directly
         schema = schemaOrUrl;
     }
 
     // Check if the schema is already added to avoid infinite loops
-    if (ajv.getSchema(schema.$id)) return;
+    if (!schema || ajv.getSchema(schema.$id)) return;
 
     // If the schema has its own $ref references, fetch and add those first
     if (schema.$ref) {
         await fetchAndAddExternalSchema(schema.$ref);
     }
 
-    // If the schema has "allOf", "anyOf", "oneOf", or "not" keywords, handle those
+    // If the schema has "allOf", "anyOf", "oneOf", or "not" keywords, handle those3
     await fetchRefsInSchema(schema);
 
     // Handle $ref references inside properties
     if (schema.properties) {
         for (const propName in schema.properties) {
             const prop = schema.properties[propName];
-
             // Check for direct $ref in the property
             if (prop.$ref) {
                 await fetchAndAddExternalSchema(prop.$ref);
             }
 
             // Check for $ref inside 'items' of an array property
-            if (prop.type === "array" && prop.items && prop.items.$ref) {
-                await fetchAndAddExternalSchema(prop.items.$ref);
+            if (prop.type === "array" && prop.items) {
+                if (prop.items.$ref) {
+                    await fetchAndAddExternalSchema(prop.items.$ref);
+                } else if (prop.items.anyOf) {
+                    for (const subSchema of prop.items.anyOf) {
+                        await fetchAndAddExternalSchema(subSchema.$ref);
+                    }
+                }
             }
 
             // You can further extend this to handle other nested structures as needed
