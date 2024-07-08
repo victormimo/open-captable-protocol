@@ -7,6 +7,7 @@
     "description": "Transfer Agent Protocol onchain cap table",
     "type": "module",
     "scripts": {
+        "t": "node src/test.js",
         "prod": "npx tsx src/simple_app.js --finalized-only",
         "dev": "npx tsx watch src/simple_app.js",
         "eslint": "eslint --cache --cache-location=node_modules/.cache/.eslintcache --fix",
@@ -22,7 +23,7 @@
         "test-js": "jest --testPathPattern src/tests/unit",
         "test-js-integration": "jest --testPathPattern src/tests/integration",
         "validate-poet-files": "cd ocf && yarn validate-poet-files",
-        "export-manifest": "cd src/db/samples && zip -r notPoet.zip notPoet && mv notPoet.zip $HOME/Downloads"
+        "export-manifest": "cd src/db/samples && zip -r fairmint.zip fairmint && mv fairmint.zip $HOME/Downloads"
     },
     "dependencies": {
         "ajv": "^8.12.0",

@@ -24,7 +24,9 @@ import txStockAcceptanceSchema from "../../../ocf/schema/objects/transactions/ac
 import txStockReissuanceSchema from "../../../ocf/schema/objects/transactions/reissuance/StockReissuance.schema.json" assert { type: "json" };
 import txStockRepurchaseSchema from "../../../ocf/schema/objects/transactions/repurchase/StockRepurchase.schema.json" assert { type: "json" };
 import txStockClassAuthorizedSharesAdjustmentSchema from "../../../ocf/schema/objects/transactions/adjustment/StockClassAuthorizedSharesAdjustment.schema.json" assert { type: "json" };
-import txIssuerAuthorizedSharesAdjustmentSchema from "../../../ocf/schema/objects/transactions/adjustment/IssuerAuthorizedSharesAdjustment.schema.json" assert { type: "json" };
+import txConvertibleIssuanceSchema from "../../../ocf/schema/objects/transactions/issuance/ConvertibleIssuance.schema.json" assert { type: "json" };
+import txEquityCompensationIssuanceSchema from "../../../ocf/schema/objects/transactions/issuance/EquityCompensationIssuance.schema.json" assert { type: "json" };
+import txWarrantIssuanceSchema from "../../../ocf/schema/objects/transactions/issuance/WarrantIssuance.schema.json" assert { type: "json" };
 
 import validateInputAgainstOCF from "../../utils/validateInputAgainstSchema.js";
 import preProcessManifestTxs from "../../state-machines/process.js";
@@ -67,8 +69,14 @@ async function processTransactionEntity(txs) {
             case "TX_STOCK_CLASS_AUTHORIZED_SHARES_ADJUSTMENT":
                 schema = txStockClassAuthorizedSharesAdjustmentSchema;
                 break;
-            case "TX_ISSUER_AUTHORIZED_SHARES_ADJUSTMENT":
-                schema = txIssuerAuthorizedSharesAdjustmentSchema;
+            case "TX_CONVERTIBLE_ISSUANCE":
+                schema = txConvertibleIssuanceSchema;
+                break;
+            case "TX_EQUITY_COMPENSATION_ISSUANCE":
+                schema = txEquityCompensationIssuanceSchema;
+                break;
+            case "TX_WARRANT_ISSUANCE":
+                schema = txWarrantIssuanceSchema;
                 break;
             default:
                 throw new Error(`${tx.object_type} is not mapped - please add the transaction validation to the schema`);
@@ -84,6 +92,37 @@ async function processTransactionEntity(txs) {
 // 4. mint cap table
 // 5. on IssuerCreated event, create the stakeholders, stock classes, etc onchain
 // 6. on IssuerCreated event, mint transactions with DB data. Save again on those events
+
+export async function verifyManifest(manifestArr) {
+    let incomingIssuer;
+    let incomingStakeholders;
+    let incomingStockClasses;
+    let incomingStockLegendTemplates;
+    let incomingStockPlans;
+    let incomingValuations;
+    let incomingVestingTerms;
+    let incomingTransactions;
+
+    manifestArr.forEach((file) => {
+        if (file.issuer) incomingIssuer = file.issuer;
+        if (file.file_type === "OCF_STAKEHOLDERS_FILE") incomingStakeholders = file;
+        if (file.file_type === "OCF_STOCK_CLASSES_FILE") incomingStockClasses = file;
+        if (file.file_type === "OCF_STOCK_LEGEND_TEMPLATES_FILE") incomingStockLegendTemplates = file;
+        if (file.file_type === "OCF_STOCK_PLANS_FILE") incomingStockPlans = file;
+        if (file.file_type === "OCF_VALUATIONS_FILE") incomingValuations = file;
+        if (file.file_type === "OCF_VESTING_TERMS_FILE") incomingVestingTerms = file;
+        if (file.file_type === "OCF_TRANSACTIONS_FILE") incomingTransactions = file;
+    });
+
+    await validateInputAgainstOCF(incomingIssuer, issuerSchema);
+    await validateInputAgainstOCF(incomingStakeholders, stakeholderSchema);
+    await validateInputAgainstOCF(incomingStockClasses, stockClassSchema);
+    await validateInputAgainstOCF(incomingStockLegendTemplates, stockLegendTemplateSchema);
+    await validateInputAgainstOCF(incomingStockPlans, stockPlanSchema);
+    await validateInputAgainstOCF(incomingValuations, valuationSchema);
+    await validateInputAgainstOCF(incomingVestingTerms, vestingTermsSchema);
+    await processTransactionEntity(incomingTransactions);
+}
 
 async function seedDB(manifestArr) {
     let incomingIssuer;

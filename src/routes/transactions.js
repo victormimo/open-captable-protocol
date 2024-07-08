@@ -6,8 +6,9 @@ import stockAcceptanceSchema from "../../ocf/schema/objects/transactions/accepta
 import issuerAuthorizedSharesAdjustmentSchema from "../../ocf/schema/objects/transactions/adjustment/IssuerAuthorizedSharesAdjustment.schema.json" assert { type: "json" };
 import stockClassAuthorizedSharesAdjustmentSchema from "../../ocf/schema/objects/transactions/adjustment/StockClassAuthorizedSharesAdjustment.schema.json" assert { type: "json" };
 import stockCancellationSchema from "../../ocf/schema/objects/transactions/cancellation/StockCancellation.schema.json" assert { type: "json" };
-// import convertibleIssuanceSchema from "../../ocf/schema/objects/transactions/issuance/ConvertibleIssuance.schema.json" assert { type: "json" };
-// import equityCompensationIssuanceSchema from "../../ocf/schema/objects/transactions/issuance/EquityCompensationIssuance.schema.json" assert { type: "json" };
+import warrantIssuanceSchema from "../../ocf/schema/objects/transactions/issuance/WarrantIssuance.schema.json" assert { type: "json" };
+import convertibleIssuanceSchema from "../../ocf/schema/objects/transactions/issuance/ConvertibleIssuance.schema.json" assert { type: "json" };
+import equityCompensationIssuanceSchema from "../../ocf/schema/objects/transactions/issuance/EquityCompensationIssuance.schema.json" assert { type: "json" };
 import stockIssuanceSchema from "../../ocf/schema/objects/transactions/issuance/StockIssuance.schema.json" assert { type: "json" };
 import stockReissuanceSchema from "../../ocf/schema/objects/transactions/reissuance/StockReissuance.schema.json" assert { type: "json" };
 import stockRepurchaseSchema from "../../ocf/schema/objects/transactions/repurchase/StockRepurchase.schema.json" assert { type: "json" };
@@ -22,7 +23,7 @@ import { convertAndCreateReissuanceStockOnchain } from "../controllers/transacti
 import { convertAndCreateRepurchaseStockOnchain } from "../controllers/transactions/repurchaseController.js";
 import { convertAndCreateRetractionStockOnchain } from "../controllers/transactions/retractionController.js";
 import { convertAndCreateTransferStockOnchain } from "../controllers/transactions/transferController.js";
-import { createConvertibleIssuance, createEquityCompensationIssuance } from "../db/operations/create.js";
+import { createConvertibleIssuance, createEquityCompensationIssuance, createWarrantIssuance } from "../db/operations/create.js";
 
 import {
     readConvertibleIssuanceByCustomId,
@@ -106,15 +107,11 @@ transactions.post("/issuance/stock-fairmint-reflection", async (req, res) => {
             ...data,
         };
 
-        // NOTE: we're overwriting custom_id by series_id to grab the value on chain.
-        // if we have conflicts in the future about custom_id we need to store
-        // series_id property inside the chain
-        incomingStockIssuance.custom_id = payload.series_id;
-
         await validateInputAgainstOCF(incomingStockIssuance, stockIssuanceSchema);
 
         const stakeholder = await readStakeholderById(incomingStockIssuance.stakeholder_id);
         const stockClass = await readStockClassById(incomingStockIssuance.stock_class_id);
+        incomingStockIssuance.comments = [payload.series_id, ...(incomingStockIssuance.comments || [])];
 
         // check if the stakeholder exists on OCP
         if (!stakeholder || !stakeholder._id) {
@@ -151,7 +148,6 @@ transactions.post("/transfer/stock", async (req, res) => {
         await readIssuerById(issuerId);
 
         // @dev: Transfer Validation is not possible through schema because it validates that the transfer has occurred,at this stage it has not yet.
-
         await convertAndCreateTransferStockOnchain(contract, data);
 
         res.status(200).send("success");
@@ -327,14 +323,16 @@ transactions.post("/accept/stock", async (req, res) => {
 
 transactions.post("/adjust/issuer/authorized-shares", async (req, res) => {
     const { contract } = req;
-    const { data } = req.body;
+    const { data, issuerId } = req.body;
 
     try {
+        await readIssuerById(issuerId);
         // OCF doesn't allow extra fields in their validation
         const issuerAuthorizedSharesAdj = {
             id: uuid(),
             date: new Date().toISOString().slice(0, 10),
             object_type: "TX_ISSUER_AUTHORIZED_SHARES_ADJUSTMENT",
+            issuer_id: issuerId,
             ...data,
         };
 
@@ -398,7 +396,7 @@ transactions.post("/issuance/equity-compensation", async (req, res) => {
             object_type: "TX_EQUITY_COMPENSATION_ISSUANCE",
             ...data,
         };
-        //  await validateInputAgainstOCF(incomingEquityCompensationIssuance, equityCompensationIssuanceSchema);
+        await validateInputAgainstOCF(incomingEquityCompensationIssuance, equityCompensationIssuanceSchema);
 
         // save to DB
         const createdIssuance = await createEquityCompensationIssuance(incomingEquityCompensationIssuance);
@@ -437,8 +435,7 @@ transactions.post("/issuance/equity-compensation-fairmint-reflection", async (re
             object_type: "TX_EQUITY_COMPENSATION_ISSUANCE",
             ...data,
         };
-        // fix ocf validation
-        // await validateInputAgainstOCF(incomingEquityCompensationIssuance, equityCompensationIssuanceSchema);
+        await validateInputAgainstOCF(incomingEquityCompensationIssuance, equityCompensationIssuanceSchema);
 
         const stakeholder = await readStakeholderById(incomingEquityCompensationIssuance.stakeholder_id);
 
@@ -499,7 +496,7 @@ transactions.post("/issuance/convertible", async (req, res) => {
         };
 
         console.log("incomingConvertibleIssuance", incomingConvertibleIssuance);
-        // await validateInputAgainstOCF(incomingConvertibleIssuance, convertibleIssuanceSchema);
+        await validateInputAgainstOCF(incomingConvertibleIssuance, convertibleIssuanceSchema);
 
         // check if it exists
         const convertibleExists = await readConvertibleIssuanceByCustomId(data?.custom_id);
@@ -548,7 +545,7 @@ transactions.post("/issuance/convertible-fairmint-reflection", async (req, res) 
         };
 
         console.log("incomingConvertibleIssuance", incomingConvertibleIssuance);
-        // await validateInputAgainstOCF(incomingConvertibleIssuance, convertibleIssuanceSchema); //TODO: fix me
+        await validateInputAgainstOCF(incomingConvertibleIssuance, convertibleIssuanceSchema);
 
         // check if the stakeholder exists
         const stakeholder = await readStakeholderById(incomingConvertibleIssuance.stakeholder_id);
@@ -586,6 +583,112 @@ transactions.post("/issuance/convertible-fairmint-reflection", async (req, res) 
         // Note: this will have it's own listener in the future to check with Fairmint Obj and sync with Fairmint accordingly
 
         res.status(200).send({ convertibleIssuance: createdIssuance });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send(`${error}`);
+    }
+});
+
+transactions.post("/issuance/warrant", async (req, res) => {
+    const { issuerId, data } = req.body;
+
+    try {
+        // ensuring issuer exists
+        await readIssuerById(issuerId);
+
+        const incomingWarrantIssuance = {
+            issuer: issuerId, // TEMPORARY: need to change when deployed on chain
+            id: uuid(), // for OCF Validation
+            security_id: uuid(), // for OCF Validation
+            date: new Date().toISOString().slice(0, 10), // for OCF Validation
+            object_type: "TX_WARRANT_ISSUANCE",
+            ...data,
+        };
+
+        console.log("incomingWarrantIssuance", incomingWarrantIssuance);
+        await validateInputAgainstOCF(incomingWarrantIssuance, warrantIssuanceSchema);
+
+        // save to DB
+        const createdIssuance = await createWarrantIssuance(incomingWarrantIssuance);
+
+        res.status(200).send({ warrantIssuance: createdIssuance });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send(`${error}`);
+    }
+});
+
+transactions.post("/issuance/warrant-fairmint-reflection", async (req, res) => {
+    const { issuerId, data } = req.body;
+    const schema = Joi.object({
+        series_id: Joi.string().uuid().required(),
+        series_name: Joi.string().required(),
+        data: Joi.object().required(),
+        issuerId: Joi.string().uuid().required(),
+    });
+
+    const { error, value: payload } = schema.validate(req.body);
+
+    if (error) {
+        return res.status(400).send({
+            error: getJoiErrorMessage(error),
+        });
+    }
+
+    try {
+        // ensuring issuer exists
+        await readIssuerById(issuerId);
+
+        const incomingWarrantIssuance = {
+            issuer: issuerId, // TEMPORARY: need to change when deployed on chain
+            id: uuid(), // for OCF Validation
+            security_id: uuid(), // for OCF Validation
+            date: new Date().toISOString().slice(0, 10), // for OCF Validation
+            object_type: "TX_WARRANT_ISSUANCE",
+            ...data,
+        };
+
+        console.log("incomingWarrantIssuance", incomingWarrantIssuance);
+        await validateInputAgainstOCF(incomingWarrantIssuance, warrantIssuanceSchema);
+
+        // check if the stakeholder exists
+        const stakeholder = await readStakeholderById(incomingWarrantIssuance.stakeholder_id);
+        if (!stakeholder || !stakeholder._id) {
+            return res.status(400).send({ error: "Stakeholder not found on OCP" });
+        }
+
+        // check stakeholder exists on fairmint
+        await checkStakeholderExistsOnFairmint({
+            stakeholder_id: stakeholder._id,
+            portal_id: issuerId,
+        });
+
+        // save to DB
+        const createdIssuance = await createWarrantIssuance(incomingWarrantIssuance);
+
+        const seriesCreated = await reflectSeries({
+            issuerId,
+            series_id: payload.series_id,
+            series_name: payload.series_name,
+            series_type: SERIES_TYPE.WARRANT,
+        });
+
+        console.log("series reflected response ", seriesCreated);
+        const { quantity, purchase_price } = incomingWarrantIssuance;
+        const dollarAmount = Number(get(purchase_price, "amount", 1)) * Number(quantity);
+
+        const reflectInvestmentResponse = await reflectInvestment({
+            id: incomingWarrantIssuance.id,
+            issuerId,
+            stakeholder_id: stakeholder._id,
+            series_id: payload.series_id,
+            amount: dollarAmount,
+        });
+
+        console.log("Reflected Investment Response:", reflectInvestmentResponse);
+        // Note: this will have it's own listener in the future to check with Fairmint Obj and sync with Fairmint accordingly
+
+        res.status(200).send({ warrantIssuance: createdIssuance });
     } catch (error) {
         console.error(error);
         res.status(500).send(`${error}`);

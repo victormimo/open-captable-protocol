@@ -3,4 +3,5 @@ export const SERIES_TYPE = {
     GRANT: "grant",
     SHARES: "shares",
     VERIFICATION: "verification",
+    WARRANT: "warrant",
 };
