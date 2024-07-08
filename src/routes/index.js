@@ -36,7 +36,7 @@ router.post("/verify-cap-table", async (req, res) => {
         res.status(200).send({ valid: true });
     } catch (error) {
         console.error({ error });
-        res.status(500).send({ ...JSON.parse(String(error).replace("Error: ", "")), valid: false });
+        res.status(500).send({ error: String(error), valid: false });
     }
 });
 
