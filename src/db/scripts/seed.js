@@ -41,6 +41,12 @@ async function processEntity(inputEntities, createEntityFunction, schema, issuer
     }
 }
 
+async function validateEntity(inputEntities, schema) {
+    for (let inputEntity of inputEntities.items) {
+        await validateInputAgainstOCF(inputEntity, schema);
+    }
+}
+
 async function processTransactionEntity(txs) {
     for (let tx of txs.items) {
         let schema;
@@ -114,13 +120,13 @@ export async function verifyManifest(manifestArr) {
         if (file.file_type === "OCF_TRANSACTIONS_FILE") incomingTransactions = file;
     });
 
-    await validateInputAgainstOCF(incomingIssuer, issuerSchema);
-    await validateInputAgainstOCF(incomingStakeholders, stakeholderSchema);
-    await validateInputAgainstOCF(incomingStockClasses, stockClassSchema);
-    await validateInputAgainstOCF(incomingStockLegendTemplates, stockLegendTemplateSchema);
-    await validateInputAgainstOCF(incomingStockPlans, stockPlanSchema);
-    await validateInputAgainstOCF(incomingValuations, valuationSchema);
-    await validateInputAgainstOCF(incomingVestingTerms, vestingTermsSchema);
+
+    await validateEntity(incomingStakeholders, stakeholderSchema);
+    await validateEntity(incomingStockClasses, stockClassSchema);
+    await validateEntity(incomingStockLegendTemplates, stockLegendTemplateSchema);
+    await validateEntity(incomingStockPlans, stockPlanSchema);
+    await validateEntity(incomingValuations, valuationSchema);
+    await validateEntity(incomingVestingTerms, vestingTermsSchema);
     await processTransactionEntity(incomingTransactions);
 }
 
