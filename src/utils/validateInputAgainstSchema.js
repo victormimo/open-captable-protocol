@@ -8,6 +8,8 @@ addFormats(ajv); // To support formats like date-time
 
 const schemaDirPath = path.join("__dirname", "../../ocf/schema");
 const REMOTE_OCF_URL = "https://raw.githubusercontent.com/Open-Cap-Table-Coalition/Open-Cap-Format-OCF/main/schema";
+import get from "lodash/get";
+
 function replaceRemoteUrlLocally(remoteUrl) {
     const formattedUrl = remoteUrl.replace(REMOTE_OCF_URL, schemaDirPath);
     return path.join("__dirname", formattedUrl);
@@ -129,9 +131,9 @@ async function validateInputAgainstSchema(input, schema) {
 
 async function validateInputAgainstOCF(input, schema) {
     const { isValid, errors } = await validateInputAgainstSchema(input, schema);
-
     if (isValid) {
-        console.log(`Check ${schema.title} Against OCF Schema is valid ✅`, isValid);
+        const id = get(input, "items.0.id");
+        console.log(`Check ${schema.title}: ${id} Against OCF Schema is valid ✅`, isValid);
     } else {
         throw new Error(JSON.stringify({ errors, schema: schema.$id.replace(REMOTE_OCF_URL, "") }, null, 2));
     }
