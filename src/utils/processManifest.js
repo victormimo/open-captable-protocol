@@ -37,7 +37,11 @@ const processManifest = (req) => {
                                             if (fileData.length === 0) {
                                                 console.error("Empty file detected:", entry.fileName);
                                             } else if (entry.fileName.endsWith("ocf.json")) {
-                                                arr.push(JSON.parse(fileData.toString()));
+                                                const path = entry.fileName.replace(/^.*[\\/]/, "");
+                                                arr.push({
+                                                    ...JSON.parse(fileData.toString()),
+                                                    path: `./${path}`,
+                                                });
                                             }
                                             zipfile.readEntry();
                                         } catch (parseError) {
