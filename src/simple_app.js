@@ -98,7 +98,6 @@ app.listen(PORT, async () => {
                 // Create a new contract instance for each issuer
                 console.log("issuer.deployed_to", issuer.deployed_to);
                 const { contract, provider, libraries } = await getContractInstance(issuer.deployed_to);
-                console.log({ contract, provider, libraries, issuerId: issuer._id });
 
                 // Initialize listener for this contract
                 try {
