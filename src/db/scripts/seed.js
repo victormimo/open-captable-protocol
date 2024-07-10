@@ -42,6 +42,7 @@ async function processEntity(inputEntities, createEntityFunction, schema, issuer
 }
 
 async function validateEntity(inputEntities, schema) {
+    if (!inputEntities) return;
     for (let inputEntity of inputEntities.items) {
         await validateInputAgainstOCF(inputEntity, schema);
     }
@@ -120,7 +121,7 @@ export async function verifyManifest(manifestArr) {
         if (file.file_type === "OCF_TRANSACTIONS_FILE") incomingTransactions = file;
     });
 
-
+    await validateInputAgainstOCF(incomingIssuer, issuerSchema);
     await validateEntity(incomingStakeholders, stakeholderSchema);
     await validateEntity(incomingStockClasses, stockClassSchema);
     await validateEntity(incomingStockLegendTemplates, stockLegendTemplateSchema);
