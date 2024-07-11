@@ -18,7 +18,6 @@ dashboard.get("/", async (req, res) => {
         return res.status(400).send("issuerId is required");
     }
 
-    // const numOfStakeholders = await countDocuments(Stakeholder, { issuer: issuerId });
     const stockIssuances = await find(StockIssuance, { issuer: issuerId });
     const totalStockAmount = stockIssuances.reduce(
         (acc, issuance) => acc + Number(get(issuance, "quantity")) * Number(get(issuance, "share_price.amount")),
@@ -46,29 +45,32 @@ dashboard.get("/", async (req, res) => {
 
     // Stakeholder
     const stakeholders = await find(Stakeholder, { issuer: issuerId });
-    const stakeholderTypeCounts = stakeholders.reduce((acc, stakeholder) => {
-        const type = stakeholder.current_relationship;
-        if (!acc[type]) {
-            acc[type] = 0;
-        }
+    const stakeholderTypeCounts = stakeholders.reduce(
+        (acc, stakeholder) => {
+            const type = stakeholder.current_relationship;
+            if (!acc[type]) {
+                acc[type] = 0;
+            }
 
-        acc[type]++;
-        return acc;
-    }, {
-        ADVISOR: 0,
-        BOARD_MEMBER: 0,
-        CONSULTANT: 0,
-        EMPLOYEE: 0,
-        EX_ADVISOR: 0,
-        EX_CONSULTANT: 0,
-        EX_EMPLOYEE: 0,
-        EXECUTIVE: 0,
-        FOUNDER: 0,
-        INVESTOR: 0,
-        NON_US_EMPLOYEE: 0,
-        OFFICER: 0,
-        OTHER: 0,
-    });
+            acc[type]++;
+            return acc;
+        },
+        {
+            ADVISOR: 0,
+            BOARD_MEMBER: 0,
+            CONSULTANT: 0,
+            EMPLOYEE: 0,
+            EX_ADVISOR: 0,
+            EX_CONSULTANT: 0,
+            EX_EMPLOYEE: 0,
+            EXECUTIVE: 0,
+            FOUNDER: 0,
+            INVESTOR: 0,
+            NON_US_EMPLOYEE: 0,
+            OFFICER: 0,
+            OTHER: 0,
+        }
+    );
 
     const totalStakeholders = stakeholders.length;
     const ownership = Object.keys(stakeholderTypeCounts).reduce((acc, type) => {
