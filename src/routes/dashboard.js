@@ -32,9 +32,10 @@ dashboard.get("/", async (req, res) => {
     // total shares calculation
     const latestAuthorizedSharesAdjustment = await IssuerAuthorizedSharesAdjustment.findOne({ issuer_id: issuerId }).sort({ date: -1 });
     const issuer = await Issuer.findById(issuerId);
+    console.log({ issuer });
     const totalShares = latestAuthorizedSharesAdjustment
-        ? Number(latestAuthorizedSharesAdjustment.new_shares_authorized)
-        : Number(issuer.initial_shares_authorized);
+        ? Number(get(latestAuthorizedSharesAdjustment, "new_shares_authorized"))
+        : Number(get(issuer, "initial_shares_authorized"));
 
     // share price calculation
     const latestStockIssuance = await StockIssuance.findOne({ issuer: issuerId }).sort({ createdAt: -1 });
