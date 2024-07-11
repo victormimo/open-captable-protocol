@@ -26,7 +26,7 @@ dashboard.get("/", async (req, res) => {
     const convertibleIssuances = await find(ConvertibleIssuance, { issuer: issuerId });
     const totalConvertibleAmount = convertibleIssuances.reduce((acc, issuance) => acc + Number(issuance.investment_amount.amount), 0);
     const totalRaised = totalStockAmount + totalConvertibleAmount;
-    const stockPlans = await find(StockPlan, { issuer: issuerId }); // .reduce((acc, plan) => acc + Number(get(plan, "initial_shares_reserved")), 0);
+    const stockPlans = await find(StockPlan, { issuer: issuerId });
     const stockPlanAmount = stockPlans.reduce((acc, plan) => acc + Number(get(plan, "initial_shares_reserved")), 0);
 
     // total shares calculation
