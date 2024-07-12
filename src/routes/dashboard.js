@@ -8,6 +8,7 @@ import IssuerAuthorizedSharesAdjustment from "../db/objects/transactions/adjustm
 import Issuer from "../db/objects/Issuer.js";
 
 import get from "lodash/get";
+import { EquityCompensationType } from "../db/objects/transactions/issuance/EquityCompensationIssuance.js";
 
 const dashboard = Router();
 
@@ -46,11 +47,41 @@ dashboard.get("/", async (req, res) => {
     const totalEquityCompensationIssuances = stockIssuances
         .filter((issuance) => !issuance.stock_class_id)
         .reduce((acc, issuance) => acc + Number(get(issuance, "quantity")), 0);
-    console.log({ totalStockIssuanceShares, totalEquityCompensationIssuances });
     const fullyDilutedShares = totalStockIssuanceShares + totalEquityCompensationIssuances;
 
-    // TODO: complete add valuation calculation
-    const valuation = [];
+    const getStockIssuanceValuation = () => {
+        const outstandingShares = totalShares - (totalStockAmount + stockPlanAmount);
+        return {
+            amount: outstandingShares * sharePrice,
+            createdAt: latestStockIssuance.createdAt,
+        };
+    };
+
+    const getConvertibleIssuanceValuation = () => {
+        const convertibleValuation = convertibleIssuances
+            .map((issuance) => {
+                const conversionRight = get(issuance, "conversion_right");
+                const isConvertibleConversion = get(conversionRight, "type") === "CONVERTIBLE_CONVERSION_RIGHT";
+                if (!isConvertibleConversion) return null;
+                const conversionMechanism = get(conversionRight, "conversion_mechanism");
+                const isSAFEConversion = get(conversionMechanism, "type") === "SAFE_CONVERSION";
+                if (!isSAFEConversion || !conversionMechanism) return null;
+
+                const conversionValuationCap = get(conversionMechanism, "conversion_valuation_cap.amount");
+                return {
+                    type: "CONVERTIBLE",
+                    amount: conversionValuationCap,
+                    createdAt: issuance.createdAt,
+                };
+            })
+            .filter((issuance) => issuance)
+            .sort((a, b) => b.createdAt - a.createdAt);
+        return get(convertibleValuation, "0", null);
+    };
+    const valuation = [
+        { ...getStockIssuanceValuation(), type: "STOCK" },
+        { ...getConvertibleIssuanceValuation(), type: "CONVERTIBLE" },
+    ].sort((a, b) => b.createdAt - a.createdAt);
 
     // Stakeholder
     const stakeholders = await find(Stakeholder, { issuer: issuerId });

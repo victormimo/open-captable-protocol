@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { v4 as uuid } from "uuid";
 
-const EquityCompensationType = ["TX_PLAN_SECURITY_ISSUANCE", "TX_EQUITY_COMPENSATION_ISSUANCE"];
+export const EquityCompensationType = ["TX_PLAN_SECURITY_ISSUANCE", "TX_EQUITY_COMPENSATION_ISSUANCE"];
 
 const EquityCompensationIssuanceSchema = new mongoose.Schema({
     _id: { type: String, default: () => uuid() },
