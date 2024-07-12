@@ -54,7 +54,7 @@ dashboard.get("/", async (req, res) => {
         return {
             type: "STOCK",
             amount: outstandingShares * sharePrice,
-            createdAt: latestStockIssuance.createdAt,
+            createdAt: get(latestStockIssuance, "createdAt"),
         };
     };
 
@@ -72,17 +72,22 @@ dashboard.get("/", async (req, res) => {
                 return {
                     type: "CONVERTIBLE",
                     amount: conversionValuationCap,
-                    createdAt: issuance.createdAt,
+                    createdAt: get(issuance, "createdAt"),
                 };
             })
             .filter((issuance) => issuance)
             .sort((a, b) => b.createdAt - a.createdAt);
         return get(convertibleValuation, "0", null);
     };
-    const valuation = [{ ...getStockIssuanceValuation() }, { ...getConvertibleIssuanceValuation() }].sort((a, b) => b.createdAt - a.createdAt);
+
+    const stockIssuanceValuation = getStockIssuanceValuation();
+    const convertibleIssuanceValuation = getConvertibleIssuanceValuation();
+    const valuations = [stockIssuanceValuation, convertibleIssuanceValuation].filter((val) => val && Object.keys(val).length > 0);
+    valuations.sort((a, b) => b.createdAt - a.createdAt);
+    const valuation = valuations.length > 0 ? valuations[0] : null;
 
     // Stakeholder
-    const stakeholders = await find(Stakeholder, { issuer: issuerId });
+    const stakeholders = (await find(Stakeholder, { issuer: issuerId })) || [];
     const stakeholderTypeCounts = stakeholders.reduce(
         (acc, stakeholder) => {
             const type = stakeholder.current_relationship;
