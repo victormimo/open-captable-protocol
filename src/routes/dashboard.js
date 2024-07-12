@@ -8,7 +8,7 @@ import IssuerAuthorizedSharesAdjustment from "../db/objects/transactions/adjustm
 import Issuer from "../db/objects/Issuer.js";
 
 import get from "lodash/get";
-import { EquityCompensationType } from "../db/objects/transactions/issuance/EquityCompensationIssuance.js";
+import { readIssuerById } from "../db/operations/read.js";
 
 const dashboard = Router();
 
@@ -18,6 +18,7 @@ dashboard.get("/", async (req, res) => {
         console.log("❌ | No issuer ID");
         return res.status(400).send("issuerId is required");
     }
+    await readIssuerById(issuerId);
 
     const stockIssuances = await find(StockIssuance, { issuer: issuerId });
     const totalStockAmount = stockIssuances.reduce(
