@@ -52,6 +52,7 @@ dashboard.get("/", async (req, res) => {
     const getStockIssuanceValuation = () => {
         const outstandingShares = totalShares - (totalStockAmount + stockPlanAmount);
         return {
+            type: "STOCK",
             amount: outstandingShares * sharePrice,
             createdAt: latestStockIssuance.createdAt,
         };
@@ -78,10 +79,7 @@ dashboard.get("/", async (req, res) => {
             .sort((a, b) => b.createdAt - a.createdAt);
         return get(convertibleValuation, "0", null);
     };
-    const valuation = [
-        { ...getStockIssuanceValuation(), type: "STOCK" },
-        { ...getConvertibleIssuanceValuation(), type: "CONVERTIBLE" },
-    ].sort((a, b) => b.createdAt - a.createdAt);
+    const valuation = [{ ...getStockIssuanceValuation() }, { ...getConvertibleIssuanceValuation() }].sort((a, b) => b.createdAt - a.createdAt);
 
     // Stakeholder
     const stakeholders = await find(Stakeholder, { issuer: issuerId });
