@@ -41,6 +41,14 @@ dashboard.get("/", async (req, res) => {
     const latestStockIssuance = await StockIssuance.findOne({ issuer: issuerId }).sort({ createdAt: -1 });
     const sharePrice = get(latestStockIssuance, "share_price.amount", null);
 
+    // fully diluted shares calculation
+    const totalStockIssuanceShares = stockIssuances.reduce((acc, issuance) => acc + Number(get(issuance, "quantity")), 0);
+    const totalEquityCompensationIssuances = stockIssuances
+        .filter((issuance) => !issuance.stock_class_id)
+        .reduce((acc, issuance) => acc + Number(get(issuance, "quantity")), 0);
+    console.log({ totalStockIssuanceShares, totalEquityCompensationIssuances });
+    const fullyDilutedShares = totalStockIssuanceShares + totalEquityCompensationIssuances;
+
     // TODO: complete add valuation calculation
     const valuation = [];
 
@@ -81,6 +89,7 @@ dashboard.get("/", async (req, res) => {
 
     res.status(200).send({
         ownership,
+        fullyDilutedShares,
         numOfStakeholders: totalStakeholders,
         totalRaised,
         stockPlanAmount,
