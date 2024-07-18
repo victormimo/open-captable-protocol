@@ -61,7 +61,7 @@ stockClass.post("/create", async (req, res) => {
         };
         await validateInputAgainstOCF(incomingStockClassToValidate, stockClassSchema);
         console.log("stockClassId", data.id);
-        const exists = await readStockClassById(data.id);
+        const exists = await readStockClassById(incomingStockClassToValidate.id);
         if (exists && exists._id) {
             return res.status(200).send({ stockClass: exists });
         }
