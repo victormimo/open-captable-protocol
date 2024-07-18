@@ -73,7 +73,11 @@ stakeholder.post("/create", async (req, res) => {
         const existingStakeholder = await readStakeholderByIssuerAssignedId(incomingStakeholderToValidate.id);
 
         if (existingStakeholder && existingStakeholder._id) {
-            return res.status(200).send({ stakeholder: existingStakeholder });
+            console.log("Stakeholder already created", existingStakeholder);
+            return res.status(200).send({
+                message: "Stakeholder already created",
+                stakeholder: existingStakeholder
+            });
         }
 
         await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB);
@@ -110,6 +114,15 @@ stakeholder.post("/create-fairmint-reflection", async (req, res) => {
         };
 
         await validateInputAgainstOCF(incomingStakeholderToValidate, stakeholderSchema);
+        const stakeholder_id = incomingStakeholderToValidate.id;
+        const foundStakeholder = await readStakeholderById(stakeholder_id);
+
+        if (foundStakeholder && foundStakeholder._id) {
+            return res.status(200).send({
+                message: `Stakeholder already found`,
+                stakeholder: foundStakeholder
+            });
+        }
 
         await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB);
 
