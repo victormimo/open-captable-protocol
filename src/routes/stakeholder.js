@@ -70,7 +70,8 @@ stakeholder.post("/create", async (req, res) => {
 
         await validateInputAgainstOCF(incomingStakeholderToValidate, stakeholderSchema);
         console.log(`Checking if Stakeholder id: ${data.issuer_assigned_id} exists`);
-        const existingStakeholder = await readStakeholderByIssuerAssignedId(data.issuer_assigned_id);
+        const existingStakeholder = await readStakeholderByIssuerAssignedId(incomingStakeholderToValidate.id);
+
         if (existingStakeholder && existingStakeholder._id) {
             return res.status(200).send({ stakeholder: existingStakeholder });
         }
