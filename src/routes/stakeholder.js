@@ -15,6 +15,7 @@ import validateInputAgainstOCF from "../utils/validateInputAgainstSchema.js";
 import { checkStakeholderExistsOnFairmint } from "../fairmint/checkStakeholder.js";
 import { updateStakeholderById } from "../db/operations/update.js";
 import { updateReflectedStakeholder } from "../fairmint/updateReflectStakeholder.js";
+import { reflectStakeholder } from "../fairmint/reflectStakeholder.js";
 
 const stakeholder = Router();
 
@@ -73,10 +74,9 @@ stakeholder.post("/create", async (req, res) => {
         const existingStakeholder = await readStakeholderByIssuerAssignedId(incomingStakeholderToValidate.id);
 
         if (existingStakeholder && existingStakeholder._id) {
-            console.log("Stakeholder already created", existingStakeholder);
             return res.status(200).send({
                 message: "Stakeholder already created",
-                stakeholder: existingStakeholder
+                stakeholder: existingStakeholder,
             });
         }
 
@@ -118,9 +118,10 @@ stakeholder.post("/create-fairmint-reflection", async (req, res) => {
         const foundStakeholder = await readStakeholderById(stakeholder_id);
 
         if (foundStakeholder && foundStakeholder._id) {
+            await reflectStakeholder({ issuerId, stakeholder: foundStakeholder });
             return res.status(200).send({
                 message: `Stakeholder already found`,
-                stakeholder: foundStakeholder
+                stakeholder: foundStakeholder,
             });
         }
 
