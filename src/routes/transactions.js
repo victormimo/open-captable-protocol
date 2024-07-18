@@ -536,7 +536,6 @@ transactions.post("/issuance/convertible-fairmint-reflection", async (req, res) 
         await readIssuerById(issuerId);
 
         const incomingConvertibleIssuance = {
-            issuer: issuerId, // TEMPORARY: need to change when deployed on chain
             id: uuid(), // for OCF Validation
             security_id: uuid(), // for OCF Validation
             date: new Date().toISOString().slice(0, 10), // for OCF Validation
