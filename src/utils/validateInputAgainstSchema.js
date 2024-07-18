@@ -129,21 +129,9 @@ async function validateInputAgainstSchema(input, schema) {
     };
 }
 
-function sanitizeInput(input) {
-    const sanitizedInput = { ...input };
-    const fieldsToRemove = ["issuer", "series_id", "series_name"];
-    if (!sanitizedInput.items) return sanitizedInput;
-    for (const field of fieldsToRemove) {
-        if (!(field in sanitizedInput.items)) continue;
-        delete sanitizedInput.items[field];
-    }
-    return sanitizedInput;
-}
-
 async function validateInputAgainstOCF(input, schema) {
-    // const sanitizedInput = sanitizeInput(input);
     const { isValid, errors } = await validateInputAgainstSchema(input, schema);
-    (isValid) {
+    if(isValid) {
         const id = get(input, "id");
         console.log(`Check ${schema.title}: ${id} Against OCF Schema is valid ✅`, isValid);
     } else {
