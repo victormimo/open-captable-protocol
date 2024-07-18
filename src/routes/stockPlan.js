@@ -51,6 +51,10 @@ stockPlan.post("/create", async (req, res) => {
         };
 
         await validateInputAgainstOCF(incomingStockPlanToValidate, stockPlanSchema);
+        const exists = await readStockPlanById(incomingStockPlanToValidate.id);
+        if (exists && exists._id) {
+            return res.status(200).send({ message:"Stock Plan already created", stockPlan: exists });
+        }
         const stockPlan = await createStockPlan(incomingStockPlanForDB);
 
         console.log("✅ | Created Stock Plan in DB: ", stockPlan);
