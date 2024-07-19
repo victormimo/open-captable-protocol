@@ -15,6 +15,7 @@ import validateInputAgainstOCF from "../utils/validateInputAgainstSchema.js";
 import { checkStakeholderExistsOnFairmint } from "../fairmint/checkStakeholder.js";
 import { updateStakeholderById } from "../db/operations/update.js";
 import { updateReflectedStakeholder } from "../fairmint/updateReflectStakeholder.js";
+import { reflectStakeholder } from "../fairmint/reflectStakeholder.js";
 
 const stakeholder = Router();
 
@@ -70,9 +71,13 @@ stakeholder.post("/create", async (req, res) => {
 
         await validateInputAgainstOCF(incomingStakeholderToValidate, stakeholderSchema);
         console.log(`Checking if Stakeholder id: ${data.issuer_assigned_id} exists`);
-        const existingStakeholder = await readStakeholderByIssuerAssignedId(data.issuer_assigned_id);
+        const existingStakeholder = await readStakeholderByIssuerAssignedId(incomingStakeholderToValidate.id);
+
         if (existingStakeholder && existingStakeholder._id) {
-            return res.status(200).send({ stakeholder: existingStakeholder });
+            return res.status(200).send({
+                message: "Stakeholder already created",
+                stakeholder: existingStakeholder,
+            });
         }
 
         await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB);
@@ -109,6 +114,16 @@ stakeholder.post("/create-fairmint-reflection", async (req, res) => {
         };
 
         await validateInputAgainstOCF(incomingStakeholderToValidate, stakeholderSchema);
+        const stakeholder_id = incomingStakeholderToValidate.id;
+        const foundStakeholder = await readStakeholderById(stakeholder_id);
+
+        if (foundStakeholder && foundStakeholder._id) {
+            await reflectStakeholder({ issuerId, stakeholder: foundStakeholder });
+            return res.status(200).send({
+                message: `Stakeholder already found`,
+                stakeholder: foundStakeholder,
+            });
+        }
 
         await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB);
 

@@ -53,7 +53,7 @@ issuer.post("/create", async (req, res) => {
         await validateInputAgainstOCF(incomingIssuerToValidate, issuerSchema);
         const exists = await readIssuerById(incomingIssuerToValidate.id);
         if (exists && exists._id) {
-            return res.status(200).send({ issuer: exists });
+            return res.status(200).send({ message: "issuer already exists", issuer: exists });
         }
         const issuerIdBytes16 = convertUUIDToBytes16(incomingIssuerToValidate.id);
         console.log("💾 | Issuer id in bytes16 ", issuerIdBytes16);

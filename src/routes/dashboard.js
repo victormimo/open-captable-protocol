@@ -87,7 +87,7 @@ dashboard.get("/", async (req, res) => {
     valuations.sort((a, b) => b.createdAt - a.createdAt);
     const valuation = valuations.length > 0 ? valuations[0] : null;
 
-    // Stakeholder
+    // Stakeholder: fix me
     const stakeholders = (await find(Stakeholder, { issuer: issuerId })) || [];
     const stakeholderTypeCounts = stakeholders.reduce(
         (acc, stakeholder) => {

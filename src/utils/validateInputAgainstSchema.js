@@ -131,7 +131,7 @@ async function validateInputAgainstSchema(input, schema) {
 
 async function validateInputAgainstOCF(input, schema) {
     const { isValid, errors } = await validateInputAgainstSchema(input, schema);
-    if (isValid) {
+    if(isValid) {
         const id = get(input, "id");
         console.log(`Check ${schema.title}: ${id} Against OCF Schema is valid ✅`, isValid);
     } else {
