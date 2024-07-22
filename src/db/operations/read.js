@@ -84,8 +84,8 @@ export const readStockIssuanceByCustomId = async (custom_id) => {
     return await StockIssuance.find({ custom_id });
 };
 
-export const readConvertibleIssuanceByCustomId = async (custom_id) => {
-    return await ConvertibleIssuance.find({ custom_id });
+export const readConvertibleIssuanceById = async (id) => {
+    return await ConvertibleIssuance.findById(id);
 };
 
 export const getAllIssuerDataById = async (issuerId) => {
