@@ -54,7 +54,7 @@ dashboard.get("/", async (req, res) => {
         const outstandingShares = totalShares - (totalStockAmount + stockPlanAmount);
         return {
             type: "STOCK",
-            amount: outstandingShares * sharePrice,
+            amount: (outstandingShares * sharePrice).toFixed(2),
             createdAt: get(latestStockIssuance, "createdAt"),
         };
     };
@@ -87,40 +87,38 @@ dashboard.get("/", async (req, res) => {
     valuations.sort((a, b) => b.createdAt - a.createdAt);
     const valuation = valuations.length > 0 ? valuations[0] : null;
 
-    // Stakeholder: fix me
+    // ownership calculation
     const stakeholders = (await find(Stakeholder, { issuer: issuerId })) || [];
-    const stakeholderTypeCounts = stakeholders.reduce(
-        (acc, stakeholder) => {
-            const type = stakeholder.current_relationship;
-            if (!acc[type]) {
-                acc[type] = 0;
-            }
-
-            acc[type]++;
-            return acc;
-        },
-        {
-            ADVISOR: 0,
-            BOARD_MEMBER: 0,
-            CONSULTANT: 0,
-            EMPLOYEE: 0,
-            EX_ADVISOR: 0,
-            EX_CONSULTANT: 0,
-            EX_EMPLOYEE: 0,
-            EXECUTIVE: 0,
-            FOUNDER: 0,
-            INVESTOR: 0,
-            NON_US_EMPLOYEE: 0,
-            OFFICER: 0,
-            OTHER: 0,
-        }
-    );
-
-    const totalStakeholders = stakeholders.length;
-    const ownership = Object.keys(stakeholderTypeCounts).reduce((acc, type) => {
-        acc[type] = (stakeholderTypeCounts[type] / totalStakeholders) * 100;
+    const stakeholderShares = stakeholders.reduce((acc, stakeholder) => {
+        acc[stakeholder.id] = { shares: 0, type: stakeholder.current_relationship };
         return acc;
     }, {});
+
+    stockIssuances.forEach((issuance) => {
+        const stakeholderId = issuance.stakeholder_id;
+        stakeholderShares[stakeholderId]["shares"] += Number(issuance.quantity);
+    });
+
+    const totalSharesOutstanding = totalStockIssuanceShares + stockPlanAmount;
+    const stakeholderTypeShares = Object.values(stakeholderShares).reduce((acc, { shares, type }) => {
+        if (!acc[type]) {
+            acc[type] = 0;
+        }
+        acc[type] += shares;
+        return acc;
+    }, {});
+
+    const ownership = Object.entries(stakeholderTypeShares).reduce((acc, [type, shares]) => {
+        acc[type] = totalSharesOutstanding ? ((shares / totalSharesOutstanding) * 100).toFixed(2) : 0;
+        return acc;
+    }, {});
+    /*
+        1. calculating ownership requires calcalationg total issuances which in case of cancelation the calculation will be wrong, therefore we need better way to get the latest ownership.
+        One way we can get through active postions from smart contract
+        2. Stock Plan Reissue is not considered in the ownership calculation: need to keep that in mind
+    */
+
+    const totalStakeholders = stakeholders.length;
 
     res.status(200).send({
         ownership,
