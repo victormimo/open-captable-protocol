@@ -1,6 +1,6 @@
 import axios from "axios";
 import get from "lodash/get";
-import { API_URL } from "../chain-operations/utils";
+import { API_URL } from "./config";
 
 export const reflectInvestment = async ({ id, issuerId, stakeholder_id, series_id, amount, number_of_shares = null }) => {
     const webHookUrl = `${API_URL}/ocp/reflectInvestment?portalId=${issuerId}`;

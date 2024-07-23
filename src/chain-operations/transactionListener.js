@@ -25,7 +25,7 @@ import {
     StockTransfer,
 } from "./structs.js";
 import { readFairmintDataById } from "../db/operations/read.js";
-import { API_URL } from "./utils.js";
+import { API_URL } from "../fairmint/config.js";
 import axios from "axios";
 
 const abiCoder = new AbiCoder();

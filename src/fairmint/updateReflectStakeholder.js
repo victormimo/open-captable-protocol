@@ -1,6 +1,6 @@
 import axios from "axios";
 import get from "lodash/get";
-import { API_URL } from "../chain-operations/utils";
+import { API_URL } from "./config";
 
 export const updateReflectedStakeholder = async ({ issuerId, stakeholder }) => {
     console.log("Updating reflected Stakeholder into fairmint...");

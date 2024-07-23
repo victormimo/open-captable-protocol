@@ -1,6 +1,6 @@
 import axios from "axios";
 import get from "lodash/get";
-import { API_URL } from "../chain-operations/utils";
+import { API_URL } from "./config";
 
 export const checkPortal = async ({ portalId }) => {
     const webHookUrl = `${API_URL}/ocp/checkPortal?portalId=${portalId}`;

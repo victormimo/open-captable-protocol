@@ -1,6 +1,6 @@
 import axios from "axios";
 import get from "lodash/get";
-import { API_URL } from "../chain-operations/utils";
+import { API_URL } from "./config";
 
 export const checkStakeholderExistsOnFairmint = async ({ portal_id, stakeholder_id }) => {
     const webHookUrl = `${API_URL}/ocp/checkStakeholder?portal_id=${portal_id}&stakeholder_id=${stakeholder_id}`;
