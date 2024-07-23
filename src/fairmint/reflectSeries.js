@@ -1,4 +1,4 @@
-import { API_URL } from "../chain-operations/utils";
+import { API_URL } from "./config";
 import axios from "axios";
 import get from "lodash/get";
 

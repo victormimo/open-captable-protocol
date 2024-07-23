@@ -26,7 +26,7 @@ import { convertAndCreateTransferStockOnchain } from "../controllers/transaction
 import { createConvertibleIssuance, createEquityCompensationIssuance, createWarrantIssuance } from "../db/operations/create.js";
 
 import {
-    readConvertibleIssuanceByCustomId,
+    readConvertibleIssuanceById,
     readIssuerById,
     readStakeholderById,
     readStockClassById,
@@ -396,10 +396,11 @@ transactions.post("/issuance/equity-compensation", async (req, res) => {
             object_type: "TX_EQUITY_COMPENSATION_ISSUANCE",
             ...data,
         };
+
         await validateInputAgainstOCF(incomingEquityCompensationIssuance, equityCompensationIssuanceSchema);
 
         // save to DB
-        const createdIssuance = await createEquityCompensationIssuance(incomingEquityCompensationIssuance);
+        const createdIssuance = await createEquityCompensationIssuance({ ...incomingEquityCompensationIssuance, issuer: issuerId });
 
         res.status(200).send({ equityCompensationIssuance: createdIssuance });
     } catch (error) {
@@ -435,6 +436,7 @@ transactions.post("/issuance/equity-compensation-fairmint-reflection", async (re
             object_type: "TX_EQUITY_COMPENSATION_ISSUANCE",
             ...data,
         };
+
         await validateInputAgainstOCF(incomingEquityCompensationIssuance, equityCompensationIssuanceSchema);
 
         const stakeholder = await readStakeholderById(incomingEquityCompensationIssuance.stakeholder_id);
@@ -450,7 +452,10 @@ transactions.post("/issuance/equity-compensation-fairmint-reflection", async (re
         });
 
         // save to DB
-        const createdIssuance = await createEquityCompensationIssuance(incomingEquityCompensationIssuance);
+        const createdIssuance = await createEquityCompensationIssuance({
+            ...incomingEquityCompensationIssuance,
+            issuer: issuerId,
+        });
 
         const seriesCreated = await reflectSeries({
             issuerId,
@@ -487,7 +492,6 @@ transactions.post("/issuance/convertible", async (req, res) => {
         await readIssuerById(issuerId);
 
         const incomingConvertibleIssuance = {
-            issuer: issuerId, // TEMPORARY: need to change when deployed on chain
             id: uuid(), // for OCF Validation
             security_id: uuid(), // for OCF Validation
             date: new Date().toISOString().slice(0, 10), // for OCF Validation
@@ -499,13 +503,16 @@ transactions.post("/issuance/convertible", async (req, res) => {
         await validateInputAgainstOCF(incomingConvertibleIssuance, convertibleIssuanceSchema);
 
         // check if it exists
-        const convertibleExists = await readConvertibleIssuanceByCustomId(data?.custom_id);
-        if (convertibleExists._id) {
-            return res.status(200).send({ convertibleIssuance: convertibleExists });
+        const convertibleExists = await readConvertibleIssuanceById(incomingConvertibleIssuance?.id);
+        if (convertibleExists && convertibleExists._id) {
+            return res.status(200).send({
+                message: "Convertible Issuance Already Exists",
+                convertibleIssuance: convertibleExists,
+            });
         }
 
         // save to DB
-        const createdIssuance = await createConvertibleIssuance(incomingConvertibleIssuance);
+        const createdIssuance = await createConvertibleIssuance({ ...incomingConvertibleIssuance, issuer: issuerId });
 
         res.status(200).send({ convertibleIssuance: createdIssuance });
     } catch (error) {
@@ -558,8 +565,19 @@ transactions.post("/issuance/convertible-fairmint-reflection", async (req, res) 
             portal_id: issuerId,
         });
 
+        // check if it exists
+        const convertibleExists = await readConvertibleIssuanceById(incomingConvertibleIssuance?.id);
+        if (convertibleExists && convertibleExists._id) {
+            return res.status(200).send({
+                message: "Convertible Issuance Already Exists",
+                convertibleIssuance: convertibleExists,
+            });
+        }
         // save to DB
-        const createdIssuance = await createConvertibleIssuance(incomingConvertibleIssuance);
+        const createdIssuance = await createConvertibleIssuance({
+            ...incomingConvertibleIssuance,
+            issuer: issuerId,
+        });
 
         const seriesCreated = await reflectSeries({
             issuerId,
@@ -596,7 +614,6 @@ transactions.post("/issuance/warrant", async (req, res) => {
         await readIssuerById(issuerId);
 
         const incomingWarrantIssuance = {
-            issuer: issuerId, // TEMPORARY: need to change when deployed on chain
             id: uuid(), // for OCF Validation
             security_id: uuid(), // for OCF Validation
             date: new Date().toISOString().slice(0, 10), // for OCF Validation
@@ -608,7 +625,7 @@ transactions.post("/issuance/warrant", async (req, res) => {
         await validateInputAgainstOCF(incomingWarrantIssuance, warrantIssuanceSchema);
 
         // save to DB
-        const createdIssuance = await createWarrantIssuance(incomingWarrantIssuance);
+        const createdIssuance = await createWarrantIssuance({ ...incomingWarrantIssuance, issuer: issuerId });
 
         res.status(200).send({ warrantIssuance: createdIssuance });
     } catch (error) {
@@ -639,7 +656,6 @@ transactions.post("/issuance/warrant-fairmint-reflection", async (req, res) => {
         await readIssuerById(issuerId);
 
         const incomingWarrantIssuance = {
-            issuer: issuerId, // TEMPORARY: need to change when deployed on chain
             id: uuid(), // for OCF Validation
             security_id: uuid(), // for OCF Validation
             date: new Date().toISOString().slice(0, 10), // for OCF Validation
@@ -663,7 +679,7 @@ transactions.post("/issuance/warrant-fairmint-reflection", async (req, res) => {
         });
 
         // save to DB
-        const createdIssuance = await createWarrantIssuance(incomingWarrantIssuance);
+        const createdIssuance = await createWarrantIssuance({ ...incomingWarrantIssuance, issuer: issuerId });
 
         const seriesCreated = await reflectSeries({
             issuerId,
