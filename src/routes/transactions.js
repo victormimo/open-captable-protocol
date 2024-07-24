@@ -473,6 +473,7 @@ transactions.post("/issuance/equity-compensation-fairmint-reflection", async (re
             token_amount: get(incomingEquityCompensationIssuance, "quantity", 0),
             exercise_price: get(incomingEquityCompensationIssuance, "exercise_price.amount", 0),
             compensation_type: get(incomingEquityCompensationIssuance, "compensation_type", ""),
+            date: get(incomingEquityCompensationIssuance, "date", new Date().toISOString().split("T")[0]),
         });
 
         console.log("Reflected Grant Response:", reflectGrantResponse);
@@ -594,6 +595,7 @@ transactions.post("/issuance/convertible-fairmint-reflection", async (req, res) 
             stakeholder_id: stakeholder._id,
             series_id: payload.series_id,
             amount: get(incomingConvertibleIssuance, "investment_amount.amount", 0),
+            date: get(incomingConvertibleIssuance, "date", new Date().toISOString().split("T")[0]),
         });
 
         console.log("Reflected Investment Response:", reflectInvestmentResponse);
@@ -690,7 +692,7 @@ transactions.post("/issuance/warrant-fairmint-reflection", async (req, res) => {
 
         console.log("series reflected response ", seriesCreated);
         const { purchase_price } = incomingWarrantIssuance;
-        const dollarAmount = Number(get(purchase_price, "amount", 1))
+        const dollarAmount = Number(get(purchase_price, "amount", 1));
 
         const reflectInvestmentResponse = await reflectInvestment({
             id: incomingWarrantIssuance.id,
@@ -698,6 +700,7 @@ transactions.post("/issuance/warrant-fairmint-reflection", async (req, res) => {
             stakeholder_id: stakeholder._id,
             series_id: payload.series_id,
             amount: dollarAmount,
+            date: get(incomingWarrantIssuance, "date", new Date().toISOString().split("T")[0]),
         });
 
         console.log("Reflected Investment Response:", reflectInvestmentResponse);
