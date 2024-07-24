@@ -54,6 +54,7 @@ dashboard.get("/", async (req, res) => {
         const totalStockIssuanceShares = stockIssuances.reduce((acc, issuance) => acc + Number(get(issuance, "quantity")), 0);
         const outstandingShares = totalStockIssuanceShares + stockPlanAmount;
         console.log({ outstandingShares, totalStockIssuanceShares, stockPlanAmount, sharePrice });
+        if (!outstandingShares || !sharePrice) return null;
         // Outstanding shares: shares reserved
         return {
             type: "STOCK",
