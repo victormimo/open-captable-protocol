@@ -139,6 +139,7 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
             series_id,
             amount: dollarAmount,
             number_of_shares: toDecimal(quantity).toString(),
+            date: dateOCF,
         });
 
         console.log("stock investment response:", reflectedInvestmentResp);
