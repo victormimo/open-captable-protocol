@@ -24,9 +24,9 @@ export const reflectInvestment = async ({ id, issuerId, stakeholder_id, series_i
                 endpoint: webHookUrl,
                 data: get(error, "response.data"),
             };
-            throw Error(`Error reflecting Convertible Issuance into Fairmint: ${JSON.stringify(formattedError, null, 2)}`);
+            throw Error(`Error reflecting Investment into Fairmint: ${JSON.stringify(formattedError, null, 2)}`);
         } else {
-            throw Error(`Error reflecting Convertible Issuance into Fairmint: ${error.message}`);
+            throw Error(`Error reflecting Investment into Fairmint: ${error.message}`);
         }
     }
 };
