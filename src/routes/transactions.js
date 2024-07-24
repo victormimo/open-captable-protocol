@@ -462,6 +462,7 @@ transactions.post("/issuance/equity-compensation-fairmint-reflection", async (re
             series_id: payload.series_id,
             series_name: payload.series_name,
             series_type: SERIES_TYPE.GRANT,
+            date: get(incomingEquityCompensationIssuance, "date", new Date().toISOString().split("T")[0]),
         });
 
         console.log("series reflected response ", seriesCreated);
@@ -585,6 +586,7 @@ transactions.post("/issuance/convertible-fairmint-reflection", async (req, res) 
             series_id: payload.series_id,
             series_name: payload.series_name,
             series_type: SERIES_TYPE.FUNDRAISING,
+            date: get(incomingConvertibleIssuance, "date", new Date().toISOString().split("T")[0]),
         });
 
         console.log("series reflected response ", seriesCreated);
@@ -688,6 +690,7 @@ transactions.post("/issuance/warrant-fairmint-reflection", async (req, res) => {
             series_id: payload.series_id,
             series_name: payload.series_name,
             series_type: SERIES_TYPE.WARRANT,
+            date: get(incomingWarrantIssuance, "date", new Date().toISOString().split("T")[0]),
         });
 
         console.log("series reflected response ", seriesCreated);
