@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { find, countDocuments } from "../db/operations/atomic";
+import { find } from "../db/operations/atomic";
 import Stakeholder from "../db/objects/Stakeholder.js";
 import StockPlan from "../db/objects/StockPlan.js";
 import StockIssuance from "../db/objects/transactions/issuance/StockIssuance.js";
