@@ -30,8 +30,7 @@ import axios from "axios";
 
 const abiCoder = new AbiCoder();
 const eventQueue = [];
-let issuerEventFired = false;
-
+const issuerEventFired = new Set();
 const txMapper = {
     0: ["INVALID"],
     1: ["ISSUER_AUTHORIZED_SHARES_ADJUSTMENT", IssuerAuthorizedSharesAdjustment],
@@ -67,7 +66,12 @@ async function startOnchainListeners(contract, provider, issuerId, libraries) {
     const issuerCreatedFilter = contract.filters.IssuerCreated;
     const issuerEvents = await contract.queryFilter(issuerCreatedFilter);
 
-    if (issuerEvents.length > 0 && !issuerEventFired) {
+    console.log({
+        issuerEvents,
+        issuerEventFired,
+    });
+
+    if (issuerEvents.length > 0 && !issuerEventFired.has(issuerEvents[0].args[0])) {
         const id = issuerEvents[0].args[0];
         console.log("IssuerCreated Event Emitted!", id);
         console.log("New issuer was deployed", { issuerId: id });
@@ -83,7 +87,7 @@ async function startOnchainListeners(contract, provider, issuerId, libraries) {
         }
 
         await verifyIssuerAndSeed(contract, id);
-        issuerEventFired = true;
+        issuerEventFired.add(issuerEvents[0].args[0]);
     }
 
     setInterval(processEventQueue, 5000); // Process every 5 seconds
