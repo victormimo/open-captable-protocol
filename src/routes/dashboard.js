@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { find, countDocuments } from "../db/operations/atomic";
+import { find } from "../db/operations/atomic";
 import Stakeholder from "../db/objects/Stakeholder.js";
 import StockPlan from "../db/objects/StockPlan.js";
 import StockIssuance from "../db/objects/transactions/issuance/StockIssuance.js";
@@ -51,25 +51,33 @@ dashboard.get("/", async (req, res) => {
     const fullyDilutedShares = totalStockIssuanceShares + totalEquityCompensationIssuances;
 
     const getStockIssuanceValuation = () => {
-        const outstandingShares = totalShares - (totalStockAmount + stockPlanAmount);
+        const totalStockIssuanceShares = stockIssuances.reduce((acc, issuance) => acc + Number(get(issuance, "quantity")), 0);
+        const outstandingShares = totalStockIssuanceShares + stockPlanAmount;
+        console.log({ outstandingShares, totalStockIssuanceShares, stockPlanAmount, sharePrice });
+        if (!outstandingShares || !sharePrice) return null;
+        // Outstanding shares: shares reserved
         return {
             type: "STOCK",
             amount: (outstandingShares * sharePrice).toFixed(2),
             createdAt: get(latestStockIssuance, "createdAt"),
         };
     };
-
     const getConvertibleIssuanceValuation = () => {
         const convertibleValuation = convertibleIssuances
             .map((issuance) => {
-                const conversionRight = get(issuance, "conversion_right");
-                const isConvertibleConversion = get(conversionRight, "type") === "CONVERTIBLE_CONVERSION_RIGHT";
-                if (!isConvertibleConversion) return null;
-                const conversionMechanism = get(conversionRight, "conversion_mechanism");
-                const isSAFEConversion = get(conversionMechanism, "type") === "SAFE_CONVERSION";
-                if (!isSAFEConversion || !conversionMechanism) return null;
+                const conversionTriggers = get(issuance, "conversion_triggers", []);
+                let conversionValuationCap = null;
+                conversionTriggers.forEach((trigger) => {
+                    const conversionRight = get(trigger, "conversion_right");
+                    const isConvertibleConversion = get(conversionRight, "type") === "CONVERTIBLE_CONVERSION_RIGHT";
+                    if (!isConvertibleConversion) return null;
+                    const conversionMechanism = get(conversionRight, "conversion_mechanism");
+                    const isSAFEConversion = get(conversionMechanism, "type") === "SAFE_CONVERSION";
+                    if (!isSAFEConversion || !conversionMechanism) return null;
 
-                const conversionValuationCap = get(conversionMechanism, "conversion_valuation_cap.amount");
+                    conversionValuationCap = get(conversionMechanism, "conversion_valuation_cap.amount");
+                    if (!conversionValuationCap) return null;
+                });
                 return {
                     type: "CONVERTIBLE",
                     amount: conversionValuationCap,
@@ -81,6 +89,14 @@ dashboard.get("/", async (req, res) => {
         return get(convertibleValuation, "0", null);
     };
 
+    /* 
+        Valuation Calculation:
+        latest issuance either Convertible with valuation cap or stock issuance
+        for stock issuance calculation:
+            outstanding shares * share price
+        for convertible issuance calculation:
+            conversion valuation cap
+    */
     const stockIssuanceValuation = getStockIssuanceValuation();
     const convertibleIssuanceValuation = getConvertibleIssuanceValuation();
     const valuations = [stockIssuanceValuation, convertibleIssuanceValuation].filter((val) => val && Object.keys(val).length > 0);

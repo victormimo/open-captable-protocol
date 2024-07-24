@@ -43,10 +43,10 @@ export const convertAndCreateIssuanceStockOnchain = async (contract, issuance) =
         security_law_exemptions,
     } = checkedValues;
 
-    let StockLegendIdsBytes16 = [];
+    let stockLegendIdsBytes16 = [];
     for (const legendId of stock_legend_ids) {
         const legendIdBytes16 = convertUUIDToBytes16(legendId);
-        StockLegendIdsBytes16.push(legendIdBytes16);
+        stockLegendIdsBytes16.push(legendIdBytes16);
     }
 
     // Second: create issuance onchain
@@ -58,7 +58,7 @@ export const convertAndCreateIssuanceStockOnchain = async (contract, issuance) =
         quantity: toScaledBigNumber(quantity),
         vesting_terms_id: convertUUIDToBytes16(vesting_terms_id),
         cost_basis, // not converted
-        stock_legend_ids,
+        stock_legend_ids: stockLegendIdsBytes16,
         issuance_type,
         comments,
         custom_id,
