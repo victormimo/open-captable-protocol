@@ -2,9 +2,10 @@ import axios from "axios";
 import get from "lodash/get";
 import { API_URL } from "./config";
 
-export const reflectGrant = async ({ issuerId, stakeholder_id, series_id, token_amount, exercise_price, compensation_type, date }) => {
+export const reflectGrant = async ({ security_id, issuerId, stakeholder_id, series_id, token_amount, exercise_price, compensation_type, date }) => {
     const webHookUrl = `${API_URL}/ocp/reflectGrant?portalId=${issuerId}`;
     console.log({
+        security_id,
         stakeholder_id,
         series_id,
         token_amount,
@@ -16,6 +17,7 @@ export const reflectGrant = async ({ issuerId, stakeholder_id, series_id, token_
     try {
         console.log("Reflecting Equity Compensation Issuance into fairmint...");
         const resp = await axios.post(webHookUrl, {
+            security_id,
             stakeholder_id,
             series_id,
             token_amount,

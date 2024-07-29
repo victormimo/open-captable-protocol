@@ -468,6 +468,7 @@ transactions.post("/issuance/equity-compensation-fairmint-reflection", async (re
         console.log("series reflected response ", seriesCreated);
 
         const reflectGrantResponse = await reflectGrant({
+            security_id: get(incomingEquityCompensationIssuance, "security_id"),
             issuerId,
             stakeholder_id: stakeholder._id,
             series_id: payload.series_id,
@@ -592,7 +593,7 @@ transactions.post("/issuance/convertible-fairmint-reflection", async (req, res) 
         console.log("series reflected response ", seriesCreated);
 
         const reflectInvestmentResponse = await reflectInvestment({
-            id: incomingConvertibleIssuance.id,
+            security_id: get(incomingConvertibleIssuance, "security_id"),
             issuerId,
             stakeholder_id: stakeholder._id,
             series_id: payload.series_id,
@@ -698,7 +699,7 @@ transactions.post("/issuance/warrant-fairmint-reflection", async (req, res) => {
         const dollarAmount = Number(get(purchase_price, "amount", 1));
 
         const reflectInvestmentResponse = await reflectInvestment({
-            id: incomingWarrantIssuance.id,
+            security_id: incomingWarrantIssuance.security_id,
             issuerId,
             stakeholder_id: stakeholder._id,
             series_id: payload.series_id,
