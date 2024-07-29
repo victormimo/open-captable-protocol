@@ -121,12 +121,8 @@ const startServer = async () => {
             console.log(err);
         }
     });
-    server.on("listening", () => {
-        const address = server.address();
-        const bind = typeof address === "string" ? "pipe " + address : "port " + address.port;
-        console.log("Listening on " + bind);
-    });
 };
+
 startServer().catch((error) => {
     console.error("Error starting server:", error);
 });
