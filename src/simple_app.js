@@ -1,6 +1,6 @@
-import { config } from "dotenv";
 import express, { json, urlencoded } from "express";
-config();
+
+import { setupEnv } from "./utils/env";
 
 // import connectDB from "./db/config/mongoose.js";
 
@@ -27,11 +27,9 @@ import { contractCache } from "./utils/simple_caches.js";
 // import { getIssuerContract } from "./utils/caches.ts";
 import { getContractInstance } from "./chain-operations/getContractInstances.js";
 
+setupEnv();
 // const contractCache = {};
 const app = express();
-
-// Connect to MongoDB
-connectDB();
 
 const PORT = process.env.PORT;
 const CHAIN = process.env.CHAIN;
@@ -88,30 +86,47 @@ app.use("/export", exportRoutes);
 // transactions
 app.use("/transactions/", contractMiddleware, transactionRoutes);
 
-app.listen(PORT, async () => {
-    console.log(`🚀  Server successfully launched. Access at: http://localhost:${PORT}`);
-    // Fetch all issuers
-    const issuers = await readAllIssuers();
-    if (issuers && issuers.length > 0) {
-        for (const issuer of issuers) {
-            if (issuer.deployed_to) {
-                // Create a new contract instance for each issuer
-                console.log("issuer.deployed_to", issuer.deployed_to);
-                const { contract, provider, libraries } = await getContractInstance(issuer.deployed_to);
+const startServer = async () => {
+    // Connect to MongoDB
+    console.log("Connecting to MongoDB...");
+    await connectDB();
+    console.log("Connected to MongoDB");
 
-                // Initialize listener for this contract
-                try {
-                    startOnchainListeners(contract, provider, issuer._id, libraries);
-                } catch (error) {
-                    console.error(`Error inside transaction listener for Issuer ${issuer._id}:`, error);
+    app.listen(PORT, async () => {
+        console.log(`🚀  Server successfully launched at:${PORT}`);
+        // Fetch all issuers
+        const issuers = await readAllIssuers();
+        if (issuers && issuers.length > 0) {
+            for (const issuer of issuers) {
+                if (issuer.deployed_to) {
+                    // Create a new contract instance for each issuer
+                    console.log("issuer.deployed_to", issuer.deployed_to);
+                    const { contract, provider, libraries } = await getContractInstance(issuer.deployed_to);
+
+                    // Initialize listener for this contract
+                    try {
+                        startOnchainListeners(contract, provider, issuer._id, libraries);
+                    } catch (error) {
+                        console.error(`Error inside transaction listener for Issuer ${issuer._id}:`, error);
+                    }
                 }
             }
         }
-    }
-});
-app.on("error", (err) => {
-    console.error(err);
-    if (err.code === "EADDRINUSE") {
-        console.log(`Port ${PORT} is already in use.`);
-    }
+    });
+    app.on("error", (err) => {
+        console.error(err);
+        if (err.code === "EADDRINUSE") {
+            console.log(`Port ${PORT} is already in use.`);
+        } else {
+            console.log(err);
+        }
+    });
+    server.on("listening", () => {
+        const address = server.address();
+        const bind = typeof address === "string" ? "pipe " + address : "port " + address.port;
+        console.log("Listening on " + bind);
+    });
+};
+startServer().catch((error) => {
+    console.error("Error starting server:", error);
 });
