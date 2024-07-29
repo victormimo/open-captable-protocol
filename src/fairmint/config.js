@@ -1,4 +1,4 @@
-import { get } from "lodash";
+import get from "lodash/get.js";
 
 const NODE_ENV = get(process, "env.NODE_ENV", "development");
 const IS_PROD = NODE_ENV === "production";
