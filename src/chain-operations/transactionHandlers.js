@@ -84,6 +84,7 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
     }
 
     const _id = convertBytes16ToUUID(id);
+    const _security_id = convertBytes16ToUUID(security_id);
     const createdStockIssuance = await upsertStockIssuanceById(_id, {
         _id,
         object_type,
@@ -97,7 +98,7 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         stock_legend_ids: convertBytes16ToUUID(stock_legend_ids),
         issuance_type: issuance_type,
         comments,
-        security_id: convertBytes16ToUUID(security_id),
+        security_id: _security_id,
         date: dateOCF,
         custom_id,
         stakeholder_id: stakeholder._id,
@@ -128,12 +129,13 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
             series_name: get(fairmintData, "attributes.series_name"),
             series_type: SERIES_TYPE.SHARES,
             price_per_share: get(sharePriceOCF, "amount", null),
+            date: dateOCF,
         });
 
         console.log("series created response ", seriesCreatedResp);
 
         const reflectedInvestmentResp = await reflectInvestment({
-            id: _id,
+            security_id: _security_id,
             issuerId,
             stakeholder_id: stakeholder._id,
             series_id,

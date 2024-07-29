@@ -2,14 +2,14 @@ import axios from "axios";
 import get from "lodash/get";
 import { API_URL } from "./config";
 
-export const reflectInvestment = async ({ id, issuerId, stakeholder_id, series_id, amount, date, number_of_shares = null }) => {
+export const reflectInvestment = async ({ security_id, issuerId, stakeholder_id, series_id, amount, date, number_of_shares = null }) => {
     const webHookUrl = `${API_URL}/ocp/reflectInvestment?portalId=${issuerId}`;
     try {
         console.log("Reflecting Investment fairmint...");
-        console.log({ id, issuerId, stakeholder_id, series_id, amount, date });
+        console.log({ security_id, issuerId, stakeholder_id, series_id, amount, date });
 
         const resp = await axios.post(webHookUrl, {
-            id,
+            security_id,
             stakeholder_id,
             series_id,
             amount,
