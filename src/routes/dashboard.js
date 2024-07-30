@@ -20,6 +20,11 @@ dashboard.get("/", async (req, res) => {
     }
 
     await readIssuerById(issuerId);
+    const stockIssuances = await find(StockIssuance, { issuer: issuerId });
+    const totalStockIssuanceShares = stockIssuances.reduce((acc, issuance) => acc + Number(get(issuance, "quantity")), 0);
+
+    const stockPlans = await find(StockPlan, { issuer: issuerId });
+    const stockPlanAmount = stockPlans.reduce((acc, plan) => acc + Number(get(plan, "initial_shares_reserved")), 0);
 
     // ownership calculation
     const stakeholders = (await find(Stakeholder, { issuer: issuerId })) || [];
@@ -51,7 +56,6 @@ dashboard.get("/", async (req, res) => {
         return acc;
     }, {});
 
-    const stockIssuances = await find(StockIssuance, { issuer: issuerId });
     const totalStockAmount = stockIssuances
         .filter((iss) => !founderStakeholderIds.has(iss.stakeholder_id)) // skip founders for total stock amount calculation
         .reduce((acc, issuance) => acc + Number(get(issuance, "quantity")) * Number(get(issuance, "share_price.amount")), 0);
@@ -59,9 +63,6 @@ dashboard.get("/", async (req, res) => {
     const convertibleIssuances = await find(ConvertibleIssuance, { issuer: issuerId });
     const totalConvertibleAmount = convertibleIssuances.reduce((acc, issuance) => acc + Number(issuance.investment_amount.amount), 0);
     const totalRaised = totalStockAmount + totalConvertibleAmount;
-
-    const stockPlans = await find(StockPlan, { issuer: issuerId });
-    const stockPlanAmount = stockPlans.reduce((acc, plan) => acc + Number(get(plan, "initial_shares_reserved")), 0);
 
     // total shares calculation
     const latestAuthorizedSharesAdjustment = await IssuerAuthorizedSharesAdjustment.findOne({ issuer_id: issuerId }).sort({ date: -1 });
@@ -76,14 +77,15 @@ dashboard.get("/", async (req, res) => {
     const sharePrice = get(latestStockIssuance, "share_price.amount", null);
 
     // fully diluted shares calculation
-    const totalStockIssuanceShares = stockIssuances.reduce((acc, issuance) => acc + Number(get(issuance, "quantity")), 0);
     const totalEquityCompensationIssuances = stockIssuances
         .filter((issuance) => !issuance.stock_class_id)
         .reduce((acc, issuance) => acc + Number(get(issuance, "quantity")), 0);
     const fullyDilutedShares = totalStockIssuanceShares + totalEquityCompensationIssuances;
 
     const getStockIssuanceValuation = () => {
-        const totalStockIssuanceShares = stockIssuances.reduce((acc, issuance) => acc + Number(get(issuance, "quantity")), 0);
+        const totalStockIssuanceShares = stockIssuances
+            .filter((iss) => !founderStakeholderIds.has(iss.stakeholder_id)) // skip founders for total stock amount calculation
+            .reduce((acc, issuance) => acc + Number(get(issuance, "quantity")), 0);
         const outstandingShares = totalStockIssuanceShares + stockPlanAmount;
         console.log({ outstandingShares, totalStockIssuanceShares, stockPlanAmount, sharePrice });
         if (!outstandingShares || !sharePrice) return null;
