@@ -33,8 +33,10 @@ dashboard.get("/", async (req, res) => {
         return acc;
     }, {});
 
-    const founderStakeholderIds = new Set(
-        stakeholders.filter((stakeholder) => stakeholder.current_relationship === "FOUNDER").map((stakeholder) => stakeholder.id)
+    const filteredStakeholderIds = new Set(
+        stakeholders
+            .filter((stakeholder) => stakeholder.current_relationship === "FOUNDER" || stakeholder.current_relationship === "BOARD_MEMBER") // skip founders & board members
+            .map((stakeholder) => stakeholder.id)
     );
 
     stockIssuances.forEach((issuance) => {
@@ -57,7 +59,7 @@ dashboard.get("/", async (req, res) => {
     }, {});
 
     const totalStockAmount = stockIssuances
-        .filter((iss) => !founderStakeholderIds.has(iss.stakeholder_id)) // skip founders for total stock amount calculation
+        .filter((iss) => !filteredStakeholderIds.has(iss.stakeholder_id)) // skip founders & board members
         .reduce((acc, issuance) => acc + Number(get(issuance, "quantity")) * Number(get(issuance, "share_price.amount")), 0);
 
     const convertibleIssuances = await find(ConvertibleIssuance, { issuer: issuerId });
@@ -84,7 +86,7 @@ dashboard.get("/", async (req, res) => {
 
     const getStockIssuanceValuation = () => {
         const totalStockIssuanceShares = stockIssuances
-            .filter((iss) => !founderStakeholderIds.has(iss.stakeholder_id)) // skip founders for total stock amount calculation
+            .filter((iss) => !filteredStakeholderIds.has(iss.stakeholder_id)) // skip founders for total stock amount calculation
             .reduce((acc, issuance) => acc + Number(get(issuance, "quantity")), 0);
         const outstandingShares = totalStockIssuanceShares + stockPlanAmount;
         console.log({ outstandingShares, totalStockIssuanceShares, stockPlanAmount, sharePrice });
