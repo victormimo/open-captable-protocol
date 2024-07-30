@@ -18,16 +18,48 @@ dashboard.get("/", async (req, res) => {
         console.log("❌ | No issuer ID");
         return res.status(400).send("issuerId is required");
     }
+
     await readIssuerById(issuerId);
 
-    const stockIssuances = await find(StockIssuance, { issuer: issuerId });
-    const totalStockAmount = stockIssuances.reduce(
-        (acc, issuance) => acc + Number(get(issuance, "quantity")) * Number(get(issuance, "share_price.amount")),
-        0
+    // ownership calculation
+    const stakeholders = (await find(Stakeholder, { issuer: issuerId })) || [];
+    const stakeholderShares = stakeholders.reduce((acc, stakeholder) => {
+        acc[stakeholder.id] = { shares: 0, type: stakeholder.current_relationship };
+        return acc;
+    }, {});
+
+    const founderStakeholderIds = new Set(
+        stakeholders.filter((stakeholder) => stakeholder.current_relationship === "FOUNDER").map((stakeholder) => stakeholder.id)
     );
+
+    stockIssuances.forEach((issuance) => {
+        const stakeholderId = issuance.stakeholder_id;
+        stakeholderShares[stakeholderId]["shares"] += Number(issuance.quantity);
+    });
+
+    const totalSharesOutstanding = totalStockIssuanceShares + stockPlanAmount;
+    const stakeholderTypeShares = Object.values(stakeholderShares).reduce((acc, { shares, type }) => {
+        if (!acc[type]) {
+            acc[type] = 0;
+        }
+        acc[type] += shares;
+        return acc;
+    }, {});
+
+    const ownership = Object.entries(stakeholderTypeShares).reduce((acc, [type, shares]) => {
+        acc[type] = totalSharesOutstanding ? ((shares / totalSharesOutstanding) * 100).toFixed(2) : 0;
+        return acc;
+    }, {});
+
+    const stockIssuances = await find(StockIssuance, { issuer: issuerId });
+    const totalStockAmount = stockIssuances
+        .filter((iss) => !founderStakeholderIds.has(iss.stakeholder_id)) // skip founders for total stock amount calculation
+        .reduce((acc, issuance) => acc + Number(get(issuance, "quantity")) * Number(get(issuance, "share_price.amount")), 0);
+
     const convertibleIssuances = await find(ConvertibleIssuance, { issuer: issuerId });
     const totalConvertibleAmount = convertibleIssuances.reduce((acc, issuance) => acc + Number(issuance.investment_amount.amount), 0);
     const totalRaised = totalStockAmount + totalConvertibleAmount;
+
     const stockPlans = await find(StockPlan, { issuer: issuerId });
     const stockPlanAmount = stockPlans.reduce((acc, plan) => acc + Number(get(plan, "initial_shares_reserved")), 0);
 
@@ -103,31 +135,6 @@ dashboard.get("/", async (req, res) => {
     valuations.sort((a, b) => b.createdAt - a.createdAt);
     const valuation = valuations.length > 0 ? valuations[0] : null;
 
-    // ownership calculation
-    const stakeholders = (await find(Stakeholder, { issuer: issuerId })) || [];
-    const stakeholderShares = stakeholders.reduce((acc, stakeholder) => {
-        acc[stakeholder.id] = { shares: 0, type: stakeholder.current_relationship };
-        return acc;
-    }, {});
-
-    stockIssuances.forEach((issuance) => {
-        const stakeholderId = issuance.stakeholder_id;
-        stakeholderShares[stakeholderId]["shares"] += Number(issuance.quantity);
-    });
-
-    const totalSharesOutstanding = totalStockIssuanceShares + stockPlanAmount;
-    const stakeholderTypeShares = Object.values(stakeholderShares).reduce((acc, { shares, type }) => {
-        if (!acc[type]) {
-            acc[type] = 0;
-        }
-        acc[type] += shares;
-        return acc;
-    }, {});
-
-    const ownership = Object.entries(stakeholderTypeShares).reduce((acc, [type, shares]) => {
-        acc[type] = totalSharesOutstanding ? ((shares / totalSharesOutstanding) * 100).toFixed(2) : 0;
-        return acc;
-    }, {});
     /*
         1. calculating ownership requires calcalationg total issuances which in case of cancelation the calculation will be wrong, therefore we need better way to get the latest ownership.
         One way we can get through active postions from smart contract
