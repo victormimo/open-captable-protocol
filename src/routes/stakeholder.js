@@ -16,6 +16,7 @@ import { checkStakeholderExistsOnFairmint } from "../fairmint/checkStakeholder.j
 import { updateStakeholderById } from "../db/operations/update.js";
 import { updateReflectedStakeholder } from "../fairmint/updateReflectStakeholder.js";
 import { reflectStakeholder } from "../fairmint/reflectStakeholder.js";
+import { readStakeholderById } from "../db/operations/read.js";
 
 const stakeholder = Router();
 
@@ -23,6 +24,23 @@ stakeholder.get("/", async (req, res) => {
     res.send(`Hello stakeholder!`);
 });
 
+// offchain
+stakeholder.get("/fetch-offchain/:id", async (req, res) => {
+    const { id } = req.params;
+
+    if (!id) return res.status(400).send(`Missing id`);
+
+    try {
+        const stakeholder = await readStakeholderById(id);
+
+        res.status(200).send(stakeholder);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send(`${error}`);
+    }
+});
+
+// onchain
 stakeholder.get("/id/:id", async (req, res) => {
     const { contract } = req;
     const { id } = req.params;
