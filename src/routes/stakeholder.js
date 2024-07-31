@@ -25,10 +25,12 @@ stakeholder.get("/", async (req, res) => {
 });
 
 // offchain
-stakeholder.get("/fetch-offchain/:id", async (req, res) => {
+stakeholder.get("/fetch-offchain/id/:id", async (req, res) => {
     const { id } = req.params;
 
     if (!id) return res.status(400).send(`Missing id`);
+
+    console.log("fetch offchain stakeholder with ID ");
 
     try {
         const stakeholder = await readStakeholderById(id);
