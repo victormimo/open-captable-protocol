@@ -34,10 +34,10 @@ stakeholder.get("/fetch-offchain/id/:id", async (req, res) => {
     try {
         const stakeholder = await readStakeholderById(id);
 
-        res.status(200).send(stakeholder);
+        return res.status(200).send({ stakeholder });
     } catch (error) {
         console.error(error);
-        res.status(500).send(`${error}`);
+        return res.status(500).send(`${error}`);
     }
 });
 
@@ -49,10 +49,10 @@ stakeholder.get("/id/:id", async (req, res) => {
     try {
         const { stakeholderId, type, role } = await getStakeholderById(contract, id);
 
-        res.status(200).send({ stakeholderId, type, role });
+        return res.status(200).send({ stakeholderId, type, role });
     } catch (error) {
         console.error(error);
-        res.status(500).send(`${error}`);
+        return res.status(500).send(`${error}`);
     }
 });
 
