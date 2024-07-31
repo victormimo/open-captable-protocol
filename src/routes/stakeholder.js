@@ -10,7 +10,7 @@ import {
 
 import stakeholderSchema from "../../ocf/schema/objects/Stakeholder.schema.json" assert { type: "json" };
 import { createStakeholder } from "../db/operations/create.js";
-import { readIssuerById, readStakeholderById, readStakeholderByIssuerAssignedId } from "../db/operations/read.js";
+import { readIssuerById, readStakeholderById, readStakeholderByIssuerAssignedId, getAllStakeholdersByIssuerId } from "../db/operations/read.js";
 import validateInputAgainstOCF from "../utils/validateInputAgainstSchema.js";
 import { checkStakeholderExistsOnFairmint } from "../fairmint/checkStakeholder.js";
 import { updateStakeholderById } from "../db/operations/update.js";
@@ -50,6 +50,22 @@ stakeholder.get("/id/:id", async (req, res) => {
         const { stakeholderId, type, role } = await getStakeholderById(contract, id);
 
         return res.status(200).send({ stakeholderId, type, role });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send(`${error}`);
+    }
+});
+
+stakeholder.get("/fetch-all", async (req, res) => {
+    const { issuerId } = req.body;
+    console.log("calling fetch all issuers");
+
+    try {
+        const stakeholders = await getAllStakeholdersByIssuerId(issuerId);
+
+        console.log("stakeholders", stakeholder);
+
+        return res.status(200).send({ stakeholders });
     } catch (error) {
         console.error(error);
         return res.status(500).send(`${error}`);
