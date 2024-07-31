@@ -16,7 +16,6 @@ import { checkStakeholderExistsOnFairmint } from "../fairmint/checkStakeholder.j
 import { updateStakeholderById } from "../db/operations/update.js";
 import { updateReflectedStakeholder } from "../fairmint/updateReflectStakeholder.js";
 import { reflectStakeholder } from "../fairmint/reflectStakeholder.js";
-import { readStakeholderById } from "../db/operations/read.js";
 
 const stakeholder = Router();
 
