@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "./CapTable.t.sol";
-import { InitialShares, IssuerInitialShares, StockClassInitialShares } from "../src/lib/Structs.sol";
+import {InitialShares, IssuerInitialShares, StockClassInitialShares} from "../src/lib/Structs.sol";
 
 contract SeedingTest is CapTableTest {
     function createInitialDummyStockClassData() private pure returns (bytes16, string memory, uint256, uint256) {
@@ -14,7 +14,8 @@ contract SeedingTest is CapTableTest {
     }
 
     function testValidSeedingOfShares() public {
-        (bytes16 stockClassId, string memory classType, uint256 pricePerShare, uint256 initialSharesAuthorized) = createInitialDummyStockClassData();
+        (bytes16 stockClassId, string memory classType, uint256 pricePerShare, uint256 initialSharesAuthorized) =
+            createInitialDummyStockClassData();
         capTable.createStockClass(stockClassId, classType, pricePerShare, initialSharesAuthorized);
 
         uint256 expectedIssuerSharesAuthorized = 1000000000000000000; // 100M
@@ -23,17 +24,17 @@ contract SeedingTest is CapTableTest {
         uint256 expectedStockClassSharesIssued = 350000000000000000; // 35M
 
         StockClassInitialShares[] memory stockClassInitialShares = new StockClassInitialShares[](1);
-        stockClassInitialShares[0] = StockClassInitialShares(stockClassId, expectedStockClassSharesAuthorized, expectedStockClassSharesIssued);
+        stockClassInitialShares[0] =
+            StockClassInitialShares(stockClassId, expectedStockClassSharesAuthorized, expectedStockClassSharesIssued);
 
         InitialShares memory params = InitialShares(
-            IssuerInitialShares(expectedIssuerSharesAuthorized, expectedIssuerSharesIssued),
-            stockClassInitialShares
+            IssuerInitialShares(expectedIssuerSharesAuthorized, expectedIssuerSharesIssued), stockClassInitialShares
         );
 
         capTable.seedSharesAuthorizedAndIssued(params);
 
         (, uint256 actualIssuerSharesIssued, uint256 actualIssuerSharesAuthorized) = capTable.issuer();
-        (, , , uint256 scSharesIssued, uint256 scSharesAuthorized) = capTable.getStockClassById(stockClassId);
+        (,,, uint256 scSharesIssued, uint256 scSharesAuthorized) = capTable.getStockClassById(stockClassId);
 
         assertEq(actualIssuerSharesAuthorized, expectedIssuerSharesAuthorized);
         assertEq(actualIssuerSharesIssued, expectedIssuerSharesIssued);
@@ -75,7 +76,9 @@ contract SeedingTest is CapTableTest {
             timestamps[i] = uint40(block.timestamp + i); // Dummy timestamps
         }
 
-        capTable.seedMultipleActivePositionsAndSecurityIds(stakeholderIds, securityIds, stockClassIds, quantities, sharePrices, timestamps);
+        capTable.seedMultipleActivePositionsAndSecurityIds(
+            stakeholderIds, securityIds, stockClassIds, quantities, sharePrices, timestamps
+        );
 
         uint256 transactionCount = capTable.getTotalActiveSecuritiesCount();
         assertEq(transactionCount, 5);
@@ -90,7 +93,9 @@ contract SeedingTest is CapTableTest {
         uint40[] memory timestamps = new uint40[](1);
 
         vm.expectRevert("Input arrays must have the same length");
-        capTable.seedMultipleActivePositionsAndSecurityIds(stakeholderIds, securityIds, stockClassIds, quantities, sharePrices, timestamps);
+        capTable.seedMultipleActivePositionsAndSecurityIds(
+            stakeholderIds, securityIds, stockClassIds, quantities, sharePrices, timestamps
+        );
     }
 
     function testSeedingWithNonExistentStakeholdersOrStockClasses() public {
@@ -111,6 +116,8 @@ contract SeedingTest is CapTableTest {
         bytes memory expectedError = abi.encodeWithSignature("NoStakeholder(bytes16)", stakeholderIds[0]);
         vm.expectRevert(expectedError);
 
-        capTable.seedMultipleActivePositionsAndSecurityIds(stakeholderIds, securityIds, stockClassIds, quantities, sharePrices, timestamps);
+        capTable.seedMultipleActivePositionsAndSecurityIds(
+            stakeholderIds, securityIds, stockClassIds, quantities, sharePrices, timestamps
+        );
     }
 }

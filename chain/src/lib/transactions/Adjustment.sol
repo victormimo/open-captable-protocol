@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import { Issuer, StockClass } from "../Structs.sol";
+import {Issuer, StockClass} from "../Structs.sol";
 import "../TxHelper.sol";
 
 library Adjustment {
@@ -16,12 +16,7 @@ library Adjustment {
     ) external {
         nonce++;
         IssuerAuthorizedSharesAdjustment memory adjustment = TxHelper.adjustIssuerAuthorizedShares(
-            nonce,
-            newSharesAuthorized,
-            comments,
-            boardApprovalDate,
-            stockholderApprovalDate,
-            issuer.id
+            nonce, newSharesAuthorized, comments, boardApprovalDate, stockholderApprovalDate, issuer.id
         );
 
         issuer.shares_authorized = newSharesAuthorized;
@@ -40,12 +35,7 @@ library Adjustment {
     ) external {
         nonce++;
         StockClassAuthorizedSharesAdjustment memory adjustment = TxHelper.adjustStockClassAuthorizedShares(
-            nonce,
-            newSharesAuthorized,
-            comments,
-            boardApprovalDate,
-            stockholderApprovalDate,
-            stockClass.id
+            nonce, newSharesAuthorized, comments, boardApprovalDate, stockholderApprovalDate, stockClass.id
         );
 
         stockClass.shares_authorized = newSharesAuthorized;

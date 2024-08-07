@@ -4,7 +4,13 @@ pragma solidity ^0.8.20;
 import "forge-std/console.sol";
 
 import "./CapTable.t.sol";
-import { StockIssuanceParams, ShareNumbersIssued, StockIssuance, StockParams, StockRepurchase } from "../src/lib/Structs.sol";
+import {
+    StockIssuanceParams,
+    ShareNumbersIssued,
+    StockIssuance,
+    StockParams,
+    StockRepurchase
+} from "../src/lib/Structs.sol";
 
 contract StockRepurchaseTest is CapTableTest {
     function testPartialStockRepurchase() public {
@@ -55,10 +61,10 @@ contract StockRepurchaseTest is CapTableTest {
         assertEq(repurchase.quantity, partialRepurchaseQuantity);
 
         // Assert issuer and stock class shares_issued
-        (, uint256 issuerSharesIssued, ) = capTable.issuer();
+        (, uint256 issuerSharesIssued,) = capTable.issuer();
         assertEq(issuerSharesIssued, issuanceQuantity - partialRepurchaseQuantity);
 
-        (, , , uint256 stockClassSharesIssued, ) = capTable.getStockClassById(stockClassId);
+        (,,, uint256 stockClassSharesIssued,) = capTable.getStockClassById(stockClassId);
         assertEq(stockClassSharesIssued, issuanceQuantity - partialRepurchaseQuantity);
     }
 
@@ -104,7 +110,7 @@ contract StockRepurchaseTest is CapTableTest {
         assertEq(repurchase.price, repurchasePrice);
 
         // Assert issuer and stock class shares_issued
-        (, uint256 issuerSharesIssued, ) = capTable.issuer();
+        (, uint256 issuerSharesIssued,) = capTable.issuer();
         assertEq(issuerSharesIssued, issuance.params.quantity - repurchaseIssuance.params.quantity);
     }
 }

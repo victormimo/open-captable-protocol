@@ -44,9 +44,8 @@ contract CapTableFactoryTest is Test {
 
         capTable.createStakeholder(stakeholderId, stakeholderType, stakeholderRelationship);
 
-        (bytes16 actualStakeolderId, string memory actualStakeholderType, string memory actualStakeholderRelationship) = capTable.getStakeholderById(
-            stakeholderId
-        );
+        (bytes16 actualStakeolderId, string memory actualStakeholderType, string memory actualStakeholderRelationship) =
+            capTable.getStakeholderById(stakeholderId);
 
         assertEq(actualStakeolderId, stakeholderId);
         assertEq(actualStakeholderType, stakeholderType);
@@ -98,9 +97,8 @@ contract CapTableFactoryTest is Test {
 
         capTable0.createStakeholder(stakeholderId, "INDIVIDUAL", "INVESTOR");
 
-        (bytes16 actualStakeolderId, string memory actualStakeholderType, string memory actualStakeholderRelationship) = capTable0.getStakeholderById(
-            stakeholderId
-        );
+        (bytes16 actualStakeolderId, string memory actualStakeholderType, string memory actualStakeholderRelationship) =
+            capTable0.getStakeholderById(stakeholderId);
 
         assertEq(actualStakeolderId, stakeholderId);
         assertEq(actualStakeholderType, "INDIVIDUAL");

@@ -3,7 +3,6 @@ pragma solidity ^0.8.20;
 
 import "./CapTable.t.sol";
 
-
 contract AdjustmentTest is CapTableTest {
     function testAdjustIssuerAuthorizedSharesBelowIssuedFails() public {
         // Create stock class and stakeholder
@@ -25,7 +24,7 @@ contract AdjustmentTest is CapTableTest {
         capTable.adjustIssuerAuthorizedShares(newIssuerSharesAuthorized, new string[](0), "2023-01-01", "2023-01-02");
 
         // Assert that the issuer authorized shares have been updated
-        (, , uint256 sharesAuthorized) = capTable.issuer();
+        (,, uint256 sharesAuthorized) = capTable.issuer();
         assertEq(sharesAuthorized, newIssuerSharesAuthorized);
     }
 
@@ -37,10 +36,12 @@ contract AdjustmentTest is CapTableTest {
 
         // Adjust stock class authorized shares
         uint256 newStockClassSharesAuthorized = 20000;
-        capTable.adjustStockClassAuthorizedShares(stockClassId, newStockClassSharesAuthorized, new string[](0), "2023-01-01", "2023-01-02");
+        capTable.adjustStockClassAuthorizedShares(
+            stockClassId, newStockClassSharesAuthorized, new string[](0), "2023-01-01", "2023-01-02"
+        );
 
         // Assert that the stock class authorized shares have been updated
-        (, , , , uint256 sharesAuthorized) = capTable.getStockClassById(stockClassId);
+        (,,,, uint256 sharesAuthorized) = capTable.getStockClassById(stockClassId);
         assertEq(sharesAuthorized, newStockClassSharesAuthorized);
     }
 
@@ -51,7 +52,11 @@ contract AdjustmentTest is CapTableTest {
 
         // Attempt to adjust stock class authorized shares above the issuer limit
         uint256 newStockClassSharesAuthorized = issuerInitialSharesAuthorized + 1; // More than the issuer authorized amount
-        vm.expectRevert("InsufficientStockClassSharesAuthorized: stock class authorized shares exceeds issuer shares authorized");
-        capTable.adjustStockClassAuthorizedShares(stockClassId, newStockClassSharesAuthorized, new string[](0), "2023-01-01", "2023-01-02");
+        vm.expectRevert(
+            "InsufficientStockClassSharesAuthorized: stock class authorized shares exceeds issuer shares authorized"
+        );
+        capTable.adjustStockClassAuthorizedShares(
+            stockClassId, newStockClassSharesAuthorized, new string[](0), "2023-01-01", "2023-01-02"
+        );
     }
 }

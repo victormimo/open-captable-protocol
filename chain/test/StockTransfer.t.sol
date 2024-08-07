@@ -4,7 +4,18 @@ pragma solidity ^0.8.20;
 import "forge-std/console.sol";
 
 import "./CapTable.t.sol";
-import { InitialShares, IssuerInitialShares, StockClassInitialShares, Issuer, StockClass, StockIssuanceParams, ShareNumbersIssued, StockIssuance, StockTransfer, StockParams } from "../src/lib/Structs.sol";
+import {
+    InitialShares,
+    IssuerInitialShares,
+    StockClassInitialShares,
+    Issuer,
+    StockClass,
+    StockIssuanceParams,
+    ShareNumbersIssued,
+    StockIssuance,
+    StockTransfer,
+    StockParams
+} from "../src/lib/Structs.sol";
 
 contract StockTransferTest is CapTableTest {
     function createTransferSetup() private returns (bytes16, bytes16, bytes16, uint256) {
@@ -31,12 +42,15 @@ contract StockTransferTest is CapTableTest {
     }
 
     function testTransferStockAcrossMultiplePositions() public {
-        (bytes16 transferorStakeholderId, bytes16 transfereeStakeholderId, bytes16 stockClassId, uint256 totalIssued) = createTransferSetup();
+        (bytes16 transferorStakeholderId, bytes16 transfereeStakeholderId, bytes16 stockClassId, uint256 totalIssued) =
+            createTransferSetup();
 
         // Transfer stock
         uint256 quantityToTransfer = 3500;
         uint256 price = 25;
-        capTable.transferStock(transferorStakeholderId, transfereeStakeholderId, stockClassId, true, quantityToTransfer, price);
+        capTable.transferStock(
+            transferorStakeholderId, transfereeStakeholderId, stockClassId, true, quantityToTransfer, price
+        );
 
         uint256 transactionsCount = capTable.getTransactionsCount();
         bytes memory lastIssuanceTx = capTable.transactions(transactionsCount - 2);
@@ -51,21 +65,25 @@ contract StockTransferTest is CapTableTest {
         assertEq(secondTransfer.quantity, 500);
         assertEq(secondTransfer.balance_security_id, remainingIssuanceSecurityId);
 
-        (, uint256 shares_issued, ) = capTable.issuer();
+        (, uint256 shares_issued,) = capTable.issuer();
 
         // shares issued should not have changed.
         assertEq(shares_issued, totalIssued);
     }
 
     function testTransferMoreThanAvailable() public {
-        (bytes16 transferorStakeholderId, bytes16 transfereeStakeholderId, bytes16 stockClassId, uint256 totalIssued) = createTransferSetup();
+        (bytes16 transferorStakeholderId, bytes16 transfereeStakeholderId, bytes16 stockClassId, uint256 totalIssued) =
+            createTransferSetup();
 
         // Transfer stock
         uint256 quantityToTransfer = 5500;
         uint256 price = 25;
 
-        bytes memory expectedError = abi.encodeWithSignature("InsufficientShares(uint256,uint256)", totalIssued, quantityToTransfer);
+        bytes memory expectedError =
+            abi.encodeWithSignature("InsufficientShares(uint256,uint256)", totalIssued, quantityToTransfer);
         vm.expectRevert(expectedError);
-        capTable.transferStock(transferorStakeholderId, transfereeStakeholderId, stockClassId, true, quantityToTransfer, price);
+        capTable.transferStock(
+            transferorStakeholderId, transfereeStakeholderId, stockClassId, true, quantityToTransfer, price
+        );
     }
 }

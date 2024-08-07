@@ -4,7 +4,18 @@ pragma solidity ^0.8.20;
 import "forge-std/console.sol";
 
 import "./CapTable.t.sol";
-import { InitialShares, IssuerInitialShares, StockClassInitialShares, Issuer, StockClass, StockIssuanceParams, ShareNumbersIssued, StockIssuance, StockTransfer, StockParams } from "../src/lib/Structs.sol";
+import {
+    InitialShares,
+    IssuerInitialShares,
+    StockClassInitialShares,
+    Issuer,
+    StockClass,
+    StockIssuanceParams,
+    ShareNumbersIssued,
+    StockIssuance,
+    StockTransfer,
+    StockParams
+} from "../src/lib/Structs.sol";
 
 contract StockCancellationTest is CapTableTest {
     function testFullStockCancellation() public {
@@ -45,7 +56,8 @@ contract StockCancellationTest is CapTableTest {
         bytes16 nonExistentSecId = bytes16("0xd3373e0a4dd86");
 
         // Expecting the ActivePositionNotFound revert
-        bytes memory expectedError = abi.encodeWithSignature("ActivePositionNotFound(bytes16,bytes16)", stakeholderId, nonExistentSecId);
+        bytes memory expectedError =
+            abi.encodeWithSignature("ActivePositionNotFound(bytes16,bytes16)", stakeholderId, nonExistentSecId);
         vm.expectRevert(expectedError);
 
         uint256 partialCancellationQuantity = 500;
@@ -76,7 +88,8 @@ contract StockCancellationTest is CapTableTest {
         uint256 quantityToCancel = 1200; // Cancel 200 more than available
 
         // if quantity is 0, there's no ActivePosition that exists.
-        bytes memory expectedError = abi.encodeWithSignature("InsufficientShares(uint256,uint256)", 1000, quantityToCancel);
+        bytes memory expectedError =
+            abi.encodeWithSignature("InsufficientShares(uint256,uint256)", 1000, quantityToCancel);
         vm.expectRevert(expectedError);
 
         capTable.cancelStock(
@@ -128,10 +141,10 @@ contract StockCancellationTest is CapTableTest {
         assertEq(cancellation.quantity, partialCancellationQuantity);
 
         // Assert issuer and stock class shares_issued
-        (, uint256 issuerSharesIssued, ) = capTable.issuer();
+        (, uint256 issuerSharesIssued,) = capTable.issuer();
         assertEq(issuerSharesIssued, firstIssuance.params.quantity - partialCancellationQuantity);
 
-        (, , , uint256 stockClassSharesIssued, ) = capTable.getStockClassById(stockClassId);
+        (,,, uint256 stockClassSharesIssued,) = capTable.getStockClassById(stockClassId);
         assertEq(stockClassSharesIssued, firstIssuance.params.quantity - partialCancellationQuantity);
     }
 }

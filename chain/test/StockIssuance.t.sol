@@ -24,6 +24,11 @@ contract StockIssuanceTest is CapTableTest {
         pure
         returns (StockIssuance memory)
     {
+    function createDummyStockIssuance(bytes16 stockClassId, bytes16 stakeholderId, uint256 quantity)
+        private
+        pure
+        returns (StockIssuance memory)
+    {
         StockIssuanceParams memory params = StockIssuanceParams({
             stock_class_id: stockClassId,
             stock_plan_id: 0x00000000000000000000000000000000,
@@ -48,6 +53,12 @@ contract StockIssuanceTest is CapTableTest {
             security_id: 0x00000000000000000000000000000000,
             params: params
         });
+        return StockIssuance({
+            id: 0x00000000000000000000000000000000,
+            object_type: "TX_STOCK_ISSUANCE",
+            security_id: 0x00000000000000000000000000000000,
+            params: params
+        });
     }
 
     function testIssueStock() public {
@@ -60,6 +71,8 @@ contract StockIssuanceTest is CapTableTest {
         bytes memory lastTransaction = capTable.transactions(lastTransactionIndex);
         StockIssuance memory actualIssuance = abi.decode(lastTransaction, (StockIssuance));
 
+        (, uint256 issuerSharesIssued,) = capTable.issuer();
+        (,,, uint256 actualSharesIssuedStockClass,) = capTable.getStockClassById(stockClassId);
         (, uint256 issuerSharesIssued,) = capTable.issuer();
         (,,, uint256 actualSharesIssuedStockClass,) = capTable.getStockClassById(stockClassId);
 
@@ -113,6 +126,7 @@ contract StockIssuanceTest is CapTableTest {
         StockIssuance memory expectedIssuance = createDummyStockIssuance(stockClassId, stakeholderId, quantity);
 
         bytes memory expectedError = abi.encodeWithSignature(
+            "InvalidQuantityOrPrice(uint256,uint256)", quantity, expectedIssuance.params.share_price
             "InvalidQuantityOrPrice(uint256,uint256)", quantity, expectedIssuance.params.share_price
         );
         vm.expectRevert(expectedError);

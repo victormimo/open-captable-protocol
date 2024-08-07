@@ -1,7 +1,27 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import { StockIssuance, StockIssuanceParams, ActivePositions, ActivePosition, SecIdsStockClass, Issuer, StockClass, StockTransfer, StockRepurchase, ShareNumbersIssued, StockAcceptance, StockCancellation, StockReissuance, StockRetraction, IssuerAuthorizedSharesAdjustment, StockClassAuthorizedSharesAdjustment, StockTransferParams, StockParamsQuantity, StockIssuanceParams, SecurityLawExemption} from "./Structs.sol";
+import {
+    StockIssuance,
+    StockIssuanceParams,
+    ActivePositions,
+    ActivePosition,
+    SecIdsStockClass,
+    Issuer,
+    StockClass,
+    StockTransfer,
+    StockRepurchase,
+    ShareNumbersIssued,
+    StockAcceptance,
+    StockCancellation,
+    StockReissuance,
+    StockRetraction,
+    IssuerAuthorizedSharesAdjustment,
+    StockClassAuthorizedSharesAdjustment,
+    StockTransferParams,
+    StockParamsQuantity,
+    StockIssuanceParams
+} from "./Structs.sol";
 
 enum TxType {
     INVALID,
@@ -30,11 +50,16 @@ library TxHelper {
     }
 
     function generateDeterministicUniqueID(bytes16 stakeholderId, uint256 nonce) public view returns (bytes16) {
-        bytes16 deterministicValue = bytes16(keccak256(abi.encodePacked(stakeholderId, block.timestamp, block.prevrandao, nonce)));
+        bytes16 deterministicValue =
+            bytes16(keccak256(abi.encodePacked(stakeholderId, block.timestamp, block.prevrandao, nonce)));
         return deterministicValue;
     }
 
-    function createStockIssuanceStructByTA(uint256 nonce, StockIssuanceParams memory params) internal view returns (StockIssuance memory issuance) {
+    function createStockIssuanceStructByTA(uint256 nonce, StockIssuanceParams memory params)
+        internal
+        view
+        returns (StockIssuance memory issuance)
+    {
         bytes16 id = generateDeterministicUniqueID(params.stakeholder_id, nonce);
         bytes16 secId = generateDeterministicUniqueID(params.stock_class_id, nonce);
 
@@ -43,10 +68,11 @@ library TxHelper {
 
     // TODO: do we need to have more information from the previous transferor issuance in this new issuance?
     // I think we can extend this for all other types of balances
-    function createStockIssuanceStructForTransfer(
-        StockTransferParams memory transferParams,
-        bytes16 stakeholderId
-    ) internal view returns (StockIssuance memory issuance) {
+    function createStockIssuanceStructForTransfer(StockTransferParams memory transferParams, bytes16 stakeholderId)
+        internal
+        view
+        returns (StockIssuance memory issuance)
+    {
         ShareNumbersIssued memory share_numbers_issued; // if not instatiated it defaults to 0 for both values
 
         bytes16 id = generateDeterministicUniqueID(stakeholderId, transferParams.nonce);
@@ -68,21 +94,21 @@ library TxHelper {
             "", // Board approval date (optional)
             "", // Stockholder approval date (optional)
             "", // Consideration text (optional)
-            new SecurityLawExemption[](0)  // Security law exemptions (optional)
+            new string[](0) // Security law exemptions (optional)
         );
-        return
-            StockIssuance(
-                id, // ID
-                "TX_STOCK_ISSUANCE", // Transaction type
-                securityId, // Security ID
-                params
-            );
+        return StockIssuance(
+            id, // ID
+            "TX_STOCK_ISSUANCE", // Transaction type
+            securityId, // Security ID
+            params
+        );
     }
 
-    function createStockIssuanceStruct(
-        StockIssuanceParams memory issuanceParams,
-        uint256 nonce
-    ) internal view returns (StockIssuance memory issuance) {
+    function createStockIssuanceStruct(StockIssuanceParams memory issuanceParams, uint256 nonce)
+        internal
+        view
+        returns (StockIssuance memory issuance)
+    {
         bytes16 id = generateDeterministicUniqueID(issuanceParams.stakeholder_id, nonce);
         bytes16 secId = generateDeterministicUniqueID(issuanceParams.stock_class_id, nonce);
 
@@ -101,17 +127,16 @@ library TxHelper {
 
         bytes16 id = generateDeterministicUniqueID(security_id, nonce);
 
-        return
-            StockTransfer(
-                id,
-                "TX_STOCK_TRANSFER",
-                quantity,
-                new string[](0), // comments,
-                security_id,
-                "", // consideration text (optional) //TODO: should we include in cap table?
-                balance_security_id,
-                resultingSecurityIds
-            );
+        return StockTransfer(
+            id,
+            "TX_STOCK_TRANSFER",
+            quantity,
+            new string[](0), // comments,
+            security_id,
+            "", // consideration text (optional) //TODO: should we include in cap table?
+            balance_security_id,
+            resultingSecurityIds
+        );
     }
 
     function createStockCancellationStruct(
@@ -124,7 +149,9 @@ library TxHelper {
     ) internal view returns (StockCancellation memory cancellation) {
         bytes16 id = generateDeterministicUniqueID(securityId, nonce);
 
-        return StockCancellation(id, "TX_STOCK_CANCELLATION", quantity, comments, securityId, reasonText, balance_security_id);
+        return StockCancellation(
+            id, "TX_STOCK_CANCELLATION", quantity, comments, securityId, reasonText, balance_security_id
+        );
     }
 
     function createStockRetractionStruct(
@@ -138,21 +165,24 @@ library TxHelper {
         return StockRetraction(id, "TX_STOCK_RETRACTION", comments, securityId, reasonText);
     }
 
-    function createStockRepurchaseStruct(StockParamsQuantity memory params, uint256 price) internal view returns (StockRepurchase memory repurchase) {
+    function createStockRepurchaseStruct(StockParamsQuantity memory params, uint256 price)
+        internal
+        view
+        returns (StockRepurchase memory repurchase)
+    {
         bytes16 id = generateDeterministicUniqueID(params.security_id, params.nonce);
 
         // Note: using stakeholderId to store balanceSecurityId
-        return
-            StockRepurchase(
-                id,
-                "TX_STOCK_REPURCHASE",
-                params.comments,
-                params.security_id,
-                params.reason_text,
-                params.stakeholder_id,
-                params.quantity,
-                price
-            );
+        return StockRepurchase(
+            id,
+            "TX_STOCK_REPURCHASE",
+            params.comments,
+            params.security_id,
+            params.reason_text,
+            params.stakeholder_id,
+            params.quantity,
+            price
+        );
     }
 
     function adjustIssuerAuthorizedShares(
@@ -165,15 +195,14 @@ library TxHelper {
     ) internal view returns (IssuerAuthorizedSharesAdjustment memory adjustment) {
         bytes16 id = generateDeterministicUniqueID(issuerId, nonce);
 
-        return
-            IssuerAuthorizedSharesAdjustment(
-                id,
-                "TX_ISSUER_AUTHORIZED_SHARES_ADJUSTMENT",
-                newSharesAuthorized,
-                comments,
-                boardApprovalDate,
-                stockholderApprovalDate
-            );
+        return IssuerAuthorizedSharesAdjustment(
+            id,
+            "TX_ISSUER_AUTHORIZED_SHARES_ADJUSTMENT",
+            newSharesAuthorized,
+            comments,
+            boardApprovalDate,
+            stockholderApprovalDate
+        );
     }
 
     function adjustStockClassAuthorizedShares(
@@ -186,15 +215,14 @@ library TxHelper {
     ) internal view returns (StockClassAuthorizedSharesAdjustment memory adjustment) {
         bytes16 id = generateDeterministicUniqueID(stockClassId, nonce);
 
-        return
-            StockClassAuthorizedSharesAdjustment(
-                id,
-                "TX_STOCK_CLASS_AUTHORIZED_SHARES_ADJUSTMENT",
-                newSharesAuthorized,
-                comments,
-                boardApprovalDate,
-                stockholderApprovalDate
-            );
+        return StockClassAuthorizedSharesAdjustment(
+            id,
+            "TX_STOCK_CLASS_AUTHORIZED_SHARES_ADJUSTMENT",
+            newSharesAuthorized,
+            comments,
+            boardApprovalDate,
+            stockholderApprovalDate
+        );
     }
 
     function createStockReissuanceStruct(
@@ -207,14 +235,16 @@ library TxHelper {
         bytes16 id = generateDeterministicUniqueID(securityId, nonce);
         bytes16 splitTransactionId = bytes16(0); // Not used in MVP
 
-        return StockReissuance(id, "TX_STOCK_REISSUANCE", comments, securityId, resultingSecurityIds, splitTransactionId, reasonText);
+        return StockReissuance(
+            id, "TX_STOCK_REISSUANCE", comments, securityId, resultingSecurityIds, splitTransactionId, reasonText
+        );
     }
 
-    function createStockAcceptanceStruct(
-        uint256 nonce,
-        string[] memory comments,
-        bytes16 securityId
-    ) internal view returns (StockAcceptance memory acceptance) {
+    function createStockAcceptanceStruct(uint256 nonce, string[] memory comments, bytes16 securityId)
+        internal
+        view
+        returns (StockAcceptance memory acceptance)
+    {
         bytes16 id = generateDeterministicUniqueID(securityId, nonce);
 
         return StockAcceptance(id, "TX_STOCK_ACCEPTANCE", securityId, comments);

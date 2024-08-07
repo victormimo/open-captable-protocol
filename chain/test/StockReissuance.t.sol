@@ -4,7 +4,18 @@ pragma solidity ^0.8.20;
 import "forge-std/console.sol";
 
 import "./CapTable.t.sol";
-import { InitialShares, IssuerInitialShares, StockClassInitialShares, Issuer, StockClass, StockIssuanceParams, ShareNumbersIssued, StockIssuance, StockParams, StockReissuance } from "../src/lib/Structs.sol";
+import {
+    InitialShares,
+    IssuerInitialShares,
+    StockClassInitialShares,
+    Issuer,
+    StockClass,
+    StockIssuanceParams,
+    ShareNumbersIssued,
+    StockIssuance,
+    StockParams,
+    StockReissuance
+} from "../src/lib/Structs.sol";
 
 contract StockReissuanceTest is CapTableTest {
     function testStockReissuance() public {
@@ -25,7 +36,7 @@ contract StockReissuanceTest is CapTableTest {
         bytes memory issuanceToReissue = capTable.transactions(capTable.getTransactionsCount() - 2);
         StockIssuance memory issuanceToDelete = abi.decode(issuanceToReissue, (StockIssuance));
 
-        (, uint256 issuerSharesIssuedBefore, ) = capTable.issuer();
+        (, uint256 issuerSharesIssuedBefore,) = capTable.issuer();
 
         uint256 totalSharesIssued = issuanceQuantity * 2;
 
@@ -54,7 +65,7 @@ contract StockReissuanceTest is CapTableTest {
         assertEq(reissuance.object_type, "TX_STOCK_REISSUANCE");
 
         // Assert that the issuer shares issued is 1000 after reissuance, since it was 2000 initially
-        (, uint256 issuerSharesIssuedAfter, ) = capTable.issuer();
+        (, uint256 issuerSharesIssuedAfter,) = capTable.issuer();
         assertEq(issuerSharesIssuedAfter, issuanceQuantity);
     }
 
@@ -105,7 +116,8 @@ contract StockReissuanceTest is CapTableTest {
         bytes16 nonExistingSecId = 0x00000000000000000000000000000000;
 
         // Expecting the ActivePositionNotFound revert
-        bytes memory expectedError = abi.encodeWithSignature("ActivePositionNotFound(bytes16,bytes16)", stakeholderId, nonExistingSecId);
+        bytes memory expectedError =
+            abi.encodeWithSignature("ActivePositionNotFound(bytes16,bytes16)", stakeholderId, nonExistingSecId);
         vm.expectRevert(expectedError);
 
         capTable.reissueStock(

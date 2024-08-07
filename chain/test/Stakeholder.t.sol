@@ -7,7 +7,7 @@ contract StakeholderTest is CapTableTest {
     function testCreateStakeholder() public {
         bytes16 stakeholderId = 0xf47ac10b58cc4372a5670e02b2c3d479;
         capTable.createStakeholder(stakeholderId, "INDIVIDUAL", "ADVISOR");
-        (bytes16 actualId, , ) = capTable.getStakeholderById(stakeholderId);
+        (bytes16 actualId,,) = capTable.getStakeholderById(stakeholderId);
         assertEq(actualId, stakeholderId);
     }
 

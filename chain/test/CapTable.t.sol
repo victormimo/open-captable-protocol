@@ -32,6 +32,10 @@ contract CapTableTest is Test {
         public
         returns (bytes16, bytes16)
     {
+    function createStockClassAndStakeholder(uint256 stockClassInitialSharesAuthorized)
+        public
+        returns (bytes16, bytes16)
+    {
         bytes16 stakeholderId = 0xd3373e0a4dd940000000000000000005;
         capTable.createStakeholder(stakeholderId, "INDIVIDUAL", "EMPLOYEE");
 
