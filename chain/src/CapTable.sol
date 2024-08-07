@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {AccessControlDefaultAdminRulesUpgradeable} from
-    "openzeppelin-upgradeable/contracts/access/AccessControlDefaultAdminRulesUpgradeable.sol";
-
 import {ICapTable} from "./interfaces/ICapTable.sol";
+import {StakeHolderFacet} from "./facets/StakeHolderFacet.sol";
+import {ADMIN_ROLE, OPERATOR_ROLE} from "./facets/CAPAccessControlFacet.sol";
 import {
     StockTransferParams,
     Issuer,
-    Stakeholder,
     StockClass,
     InitialShares,
     ActivePositions,
@@ -18,71 +16,49 @@ import {
     StockParamsQuantity,
     StockIssuanceParams
 } from "./lib/Structs.sol";
-import "./lib/transactions/Adjustment.sol";
 import "./lib/Stock.sol";
 
-contract CapTable is ICapTable, AccessControlDefaultAdminRulesUpgradeable {
-    Issuer public issuer;
-    Stakeholder[] public stakeholders;
-    StockClass[] public stockClasses;
-    StockLegendTemplate[] public stockLegendTemplates;
-
+contract CapTable is ICapTable, StakeHolderFacet {
     /// @inheritdoc ICapTable
     bytes[] public override transactions;
-
-    /// @dev Used to help generate deterministic UUIDs
-    uint256 public nonce;
-
-    /// @inheritdoc ICapTable
-    mapping(bytes16 => uint256) public override stakeholderIndex;
-    /// @inheritdoc ICapTable
-    mapping(bytes16 => uint256) public override stockClassIndex;
-    /// @inheritdoc ICapTable
-    mapping(address => bytes16) public override walletsPerStakeholder;
-
-    ActivePositions positions;
-    SecIdsStockClass activeSecs;
-
-    /// @inheritdoc ICapTable
-    bytes32 public constant override ADMIN_ROLE = keccak256("ADMIN");
-    /// @inheritdoc ICapTable
-    bytes32 public constant override OPERATOR_ROLE = keccak256("OPERATOR");
-
-    event IssuerCreated(bytes16 indexed id);
-    event StakeholderCreated(bytes16 indexed id);
-    event StockClassCreated(
-        bytes16 indexed id, string indexed classType, uint256 indexed pricePerShare, uint256 initialSharesAuthorized
-    );
-
-    error StakeholderAlreadyExists(bytes16 stakeholder_id);
-    error StockClassAlreadyExists(bytes16 stock_class_id);
-    error StockClassDoesNotExist(bytes16 stock_class_id);
-    error InvalidWallet(address wallet);
-    error NoStakeholder(bytes16 stakeholder_id);
-    error InvalidStockClass(bytes16 stock_class_id);
-    error InsufficientIssuerSharesAuthorized();
-    error InsufficientStockClassSharesAuthorized();
-    error NoIssuanceFound();
-    error WalletAlreadyExists(address wallet);
-    error NoActivePositionFound();
-
-    constructor() {
-        _disableInitializers();
-    }
-
-    function initialize(bytes16 id, uint256 initial_shares_authorized, address admin) external initializer {
-        __AccessControlDefaultAdminRules_init(0 seconds, admin);
-        _grantRole(ADMIN_ROLE, admin);
-        _setRoleAdmin(ADMIN_ROLE, ADMIN_ROLE);
-        _setRoleAdmin(OPERATOR_ROLE, ADMIN_ROLE);
-
-        issuer = Issuer(id, 0, initial_shares_authorized);
-        emit IssuerCreated(id);
-    }
 
     /// @inheritdoc ICapTable
     function getTransactionsCount() external view returns (uint256) {
         return transactions.length;
+    }
+
+    Issuer public issuer;
+    StockClass[] public stockClasses;
+    StockLegendTemplate[] public stockLegendTemplates;
+    /// @dev Used to help generate deterministic UUIDs
+    uint256 public nonce;
+    /// @inheritdoc ICapTable
+    mapping(bytes16 => uint256) public override stockClassIndex;
+
+    ActivePositions positions;
+    SecIdsStockClass activeSecs;
+
+    event IssuerCreated(bytes16 indexed id);
+    event StockClassCreated(
+        bytes16 indexed id, string indexed classType, uint256 indexed pricePerShare, uint256 initialSharesAuthorized
+    );
+
+    error StockClassAlreadyExists(bytes16 stock_class_id);
+    error StockClassDoesNotExist(bytes16 stock_class_id);
+    error InvalidStockClass(bytes16 stock_class_id);
+    error InsufficientIssuerSharesAuthorized();
+    error InsufficientStockClassSharesAuthorized();
+    error NoIssuanceFound();
+    error NoActivePositionFound();
+
+    function initialize(bytes16 id, uint256 initial_shares_authorized, address admin) external {
+        //__AccessControlDefaultAdminRules_init(0 seconds, admin);
+        //_grantRole(ADMIN_ROLE, admin);
+        //_setRoleAdmin(ADMIN_ROLE, ADMIN_ROLE);
+        //_setRoleAdmin(OPERATOR_ROLE, ADMIN_ROLE);
+
+        issuer = Issuer(id, 0, initial_shares_authorized);
+        emit IssuerCreated(id);
     }
 
     /// @inheritdoc ICapTable
@@ -145,19 +121,6 @@ contract CapTable is ICapTable, AccessControlDefaultAdminRulesUpgradeable {
     }
 
     /// @inheritdoc ICapTable
-    function createStakeholder(bytes16 _id, string memory _stakeholder_type, string memory _current_relationship)
-        external
-        override
-        onlyAdmin
-    {
-        _checkStakeholderExists(_id);
-
-        stakeholders.push(Stakeholder(_id, _stakeholder_type, _current_relationship));
-        stakeholderIndex[_id] = stakeholders.length;
-        emit StakeholderCreated(_id);
-    }
-
-    /// @inheritdoc ICapTable
     function createStockClass(
         bytes16 _id,
         string memory _class_type,
@@ -178,26 +141,6 @@ contract CapTable is ICapTable, AccessControlDefaultAdminRulesUpgradeable {
     }
 
     /// @inheritdoc ICapTable
-    /// @notice Setter for walletsPerStakeholder mapping
-    /// @dev Function is separate from createStakeholder since multiple wallets will be added per stakeholder at different times.
-    function addWalletToStakeholder(bytes16 _stakeholder_id, address _wallet) external override onlyOperator {
-        _checkInvalidWallet(_wallet);
-        _checkStakeholderIsStored(_stakeholder_id);
-        _checkWalletAlreadyExists(_wallet);
-
-        walletsPerStakeholder[_wallet] = _stakeholder_id;
-    }
-
-    /// @inheritdoc ICapTable
-    /// @notice Removing wallet from walletsPerStakeholder mapping
-    function removeWalletFromStakeholder(bytes16 _stakeholder_id, address _wallet) external override onlyOperator {
-        _checkInvalidWallet(_wallet);
-        _checkStakeholderIsStored(_stakeholder_id);
-
-        delete walletsPerStakeholder[_wallet];
-    }
-
-    /// @inheritdoc ICapTable
     function issueStock(StockIssuanceParams calldata params) external override onlyOperator {
         _checkStakeholderIsStored(params.stakeholder_id);
         _checkInvalidStockClass(params.stock_class_id);
@@ -214,7 +157,7 @@ contract CapTable is ICapTable, AccessControlDefaultAdminRulesUpgradeable {
 
         nonce++;
 
-        StockLib.createIssuance(nonce, params, positions, activeSecs, transactions, issuer, stockClass);
+        StockLib.createIssuance(nonce, params);
     }
 
     /// @inheritdoc ICapTable
@@ -238,15 +181,7 @@ contract CapTable is ICapTable, AccessControlDefaultAdminRulesUpgradeable {
             params.reason_text
         );
 
-        StockLib.createRepurchase(
-            repurchaseParams,
-            price,
-            positions,
-            activeSecs,
-            transactions,
-            issuer,
-            stockClasses[stockClassIndex[params.stock_class_id] - 1]
-        );
+        StockLib.createRepurchase(repurchaseParams, price);
     }
 
     /// @inheritdoc ICapTable
@@ -256,15 +191,7 @@ contract CapTable is ICapTable, AccessControlDefaultAdminRulesUpgradeable {
 
         nonce++;
 
-        StockLib.createRetraction(
-            params,
-            nonce,
-            positions,
-            activeSecs,
-            transactions,
-            issuer,
-            stockClasses[stockClassIndex[params.stock_class_id] - 1]
-        );
+        StockLib.createRetraction(params, nonce);
     }
 
     /// @inheritdoc ICapTable
@@ -279,16 +206,7 @@ contract CapTable is ICapTable, AccessControlDefaultAdminRulesUpgradeable {
 
         nonce++;
 
-        StockLib.createReissuance(
-            params,
-            nonce,
-            resulting_security_ids,
-            positions,
-            activeSecs,
-            transactions,
-            issuer,
-            stockClasses[stockClassIndex[params.stock_class_id] - 1]
-        );
+        StockLib.createReissuance(params, nonce);
     }
 
     /// @inheritdoc ICapTable
@@ -308,14 +226,7 @@ contract CapTable is ICapTable, AccessControlDefaultAdminRulesUpgradeable {
             params.reason_text
         );
 
-        StockLib.createCancellation(
-            cancelParams,
-            positions,
-            activeSecs,
-            transactions,
-            issuer,
-            stockClasses[stockClassIndex[params.stock_class_id] - 1]
-        );
+        StockLib.createCancellation(cancelParams);
     }
 
     /// @inheritdoc ICapTable
@@ -343,9 +254,7 @@ contract CapTable is ICapTable, AccessControlDefaultAdminRulesUpgradeable {
             nonce
         );
 
-        StockLib.createTransfer(
-            params, positions, activeSecs, transactions, issuer, stockClasses[stockClassIndex[stockClassId] - 1]
-        );
+        StockLib.createTransfer(params);
     }
 
     /// @inheritdoc ICapTable
@@ -364,7 +273,7 @@ contract CapTable is ICapTable, AccessControlDefaultAdminRulesUpgradeable {
 
         _checkActivePositionExists(activePosition);
 
-        StockLib.createAcceptance(nonce, securityId, comments, transactions);
+        StockLib.createAcceptance(nonce, securityId, comments);
     }
 
     /// @inheritdoc ICapTable
@@ -381,8 +290,8 @@ contract CapTable is ICapTable, AccessControlDefaultAdminRulesUpgradeable {
 
         nonce++;
 
-        Adjustment.adjustIssuerAuthorizedShares(
-            nonce, newSharesAuthorized, comments, boardApprovalDate, stockholderApprovalDate, issuer, transactions
+        StockLib.adjustIssuerAuthorizedShares(
+            nonce, newSharesAuthorized, comments, boardApprovalDate, stockholderApprovalDate
         );
     }
 
@@ -404,19 +313,9 @@ contract CapTable is ICapTable, AccessControlDefaultAdminRulesUpgradeable {
 
         nonce++;
 
-        Adjustment.adjustStockClassAuthorizedShares(
-            nonce, newAuthorizedShares, comments, boardApprovalDate, stockholderApprovalDate, stockClass, transactions
+        StockLib.adjustStockClassAuthorizedShares(
+            nonce, newAuthorizedShares, comments, boardApprovalDate, stockholderApprovalDate
         );
-    }
-
-    /// @inheritdoc ICapTable
-    function getStakeholderById(bytes16 _id) external view override returns (bytes16, string memory, string memory) {
-        if (stakeholderIndex[_id] > 0) {
-            Stakeholder memory stakeholder = stakeholders[stakeholderIndex[_id] - 1];
-            return (stakeholder.id, stakeholder.stakeholder_type, stakeholder.current_relationship);
-        } else {
-            return ("", "", "");
-        }
     }
 
     /// @inheritdoc ICapTable
@@ -438,17 +337,6 @@ contract CapTable is ICapTable, AccessControlDefaultAdminRulesUpgradeable {
         } else {
             return ("", "", 0, 0, 0);
         }
-    }
-
-    /// @inheritdoc ICapTable
-    function getStakeholderIdByWallet(address _wallet) external view override returns (bytes16 stakeholderId) {
-        require(walletsPerStakeholder[_wallet] != bytes16(0), "No stakeholder found");
-        return walletsPerStakeholder[_wallet];
-    }
-
-    /// @inheritdoc ICapTable
-    function getTotalNumberOfStakeholders() external view override returns (uint256) {
-        return stakeholders.length;
     }
 
     /// @inheritdoc ICapTable
@@ -486,71 +374,9 @@ contract CapTable is ICapTable, AccessControlDefaultAdminRulesUpgradeable {
         return (quantityPrice, quantity, timestamp);
     }
 
-    /* Role Based Access Control */
-    modifier onlyOperator() {
-        /// @notice Admins are also considered Operators
-        require(hasRole(OPERATOR_ROLE, _msgSender()) || _isAdmin(), "Does not have operator role");
-        _;
-    }
-
-    modifier onlyAdmin() {
-        require(_isAdmin(), "Does not have admin role");
-        _;
-    }
-
-    function _isAdmin() internal view returns (bool) {
-        return hasRole(ADMIN_ROLE, _msgSender());
-    }
-
-    //  External API for updating roles of addresses
-
-    /// @inheritdoc ICapTable
-    function addAdmin(address addr) external override onlyAdmin {
-        _grantRole(ADMIN_ROLE, addr);
-    }
-
-    /// @inheritdoc ICapTable
-    function removeAdmin(address addr) external override onlyAdmin {
-        _revokeRole(ADMIN_ROLE, addr);
-    }
-
-    /// @inheritdoc ICapTable
-    function addOperator(address addr) external override onlyAdmin {
-        _grantRole(OPERATOR_ROLE, addr);
-    }
-
-    /// @inheritdoc ICapTable
-    function removeOperator(address addr) external override onlyAdmin {
-        _revokeRole(OPERATOR_ROLE, addr);
-    }
-
-    function _checkStakeholderExists(bytes16 _id) internal view {
-        if (stakeholderIndex[_id] > 0) {
-            revert StakeholderAlreadyExists(_id);
-        }
-    }
-
     function _checkStockClassExists(bytes16 _id) internal view {
         if (stockClassIndex[_id] > 0) {
             revert StockClassAlreadyExists(_id);
-        }
-    }
-
-    function _checkInvalidWallet(address _wallet) internal pure {
-        if (_wallet == address(0)) {
-            revert InvalidWallet(_wallet);
-        }
-    }
-
-    function _checkStakeholderIsStored(bytes16 _id) internal view {
-        if (stakeholderIndex[_id] == 0) {
-            revert NoStakeholder(_id);
-        }
-    }
-
-    function _checkWalletAlreadyExists(address _wallet) internal view {
-        if (walletsPerStakeholder[_wallet] != bytes16(0)) {
-            revert WalletAlreadyExists(_wallet);
         }
     }
 

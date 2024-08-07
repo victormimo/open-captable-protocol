@@ -4,19 +4,14 @@ pragma solidity ^0.8.20;
 import {ActivePositions, SecIdsStockClass} from "./Structs.sol";
 
 library DeleteContext {
-    function deleteActivePosition(bytes16 _stakeholder_id, bytes16 _security_id, ActivePositions storage positions)
-        external
-    {
+    function deleteActivePosition(bytes16 _stakeholder_id, bytes16 _security_id) external {
         delete positions.activePositions[_stakeholder_id][_security_id];
     }
 
     // Active Security IDs by Stock Class { "stakeholder_id": { "stock_class_id-1": ["sec-id-1", "sec-id-2"] } }
-    function deleteActiveSecurityIdsByStockClass(
-        bytes16 _stakeholder_id,
-        bytes16 _stock_class_id,
-        bytes16 _security_id,
-        SecIdsStockClass storage activeSecs
-    ) external {
+    function deleteActiveSecurityIdsByStockClass(bytes16 _stakeholder_id, bytes16 _stock_class_id, bytes16 _security_id)
+        external
+    {
         bytes16[] storage securities = activeSecs.activeSecurityIdsByStockClass[_stakeholder_id][_stock_class_id];
 
         uint256 index = find(securities, _security_id);

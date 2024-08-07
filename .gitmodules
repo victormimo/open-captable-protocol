@@ -10,3 +10,9 @@
 [submodule "chain/lib/openzeppelin-contracts-upgradeable"]
 	path = chain/lib/openzeppelin-contracts-upgradeable
 	url = https://github.com/openzeppelin/openzeppelin-contracts-upgradeable
+[submodule "chain/lib/ds-test"]
+	path = chain/lib/ds-test
+	url = https://github.com/dapphub/ds-test
+[submodule "chain/lib/solidstate-solidity"]
+	path = chain/lib/solidstate-solidity
+	url = https://github.com/solidstate-network/solidstate-solidity

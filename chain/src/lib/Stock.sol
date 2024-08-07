@@ -21,29 +21,14 @@ library StockLib {
     error UnverifiedBuyer();
     error ActivePositionNotFound(bytes16 stakeholderId, bytes16 securityId);
 
-    function createIssuance(
-        uint256 nonce,
-        StockIssuanceParams memory issuanceParams,
-        ActivePositions storage positions,
-        SecIdsStockClass storage activeSecs,
-        bytes[] storage transactions,
-        Issuer storage issuer,
-        StockClass storage stockClass
-    ) external {
+    function createIssuance(uint256 nonce, StockIssuanceParams memory issuanceParams) external {
         _checkInvalidQuantityOrPrice(issuanceParams.quantity, issuanceParams.share_price);
 
         StockIssuance memory issuance = TxHelper.createStockIssuanceStruct(issuanceParams, nonce);
-        _updateContext(issuance, positions, activeSecs, issuer, stockClass, transactions);
+        _updateContext(issuance);
     }
 
-    function createTransfer(
-        StockTransferParams memory params,
-        ActivePositions storage positions,
-        SecIdsStockClass storage activeSecs,
-        bytes[] storage transactions,
-        Issuer storage issuer,
-        StockClass storage stockClass
-    ) external {
+    function createTransfer(StockTransferParams memory params) external {
         _checkBuyerVerified(params.is_buyer_verified);
         _checkInvalidQuantityOrPrice(params.quantity, params.share_price);
         require(
@@ -85,7 +70,7 @@ library StockLib {
 
             params.quantity = transferQuantity;
 
-            _transferSingleStock(params, active_security_id, positions, activeSecs, transactions, issuer, stockClass);
+            _transferSingleStock(params, active_security_id);
 
             remainingQuantity -= transferQuantity;
 
@@ -95,14 +80,7 @@ library StockLib {
         }
     }
 
-    function createCancellation(
-        StockParamsQuantity memory params,
-        ActivePositions storage positions,
-        SecIdsStockClass storage activeSecs,
-        bytes[] storage transactions,
-        Issuer storage issuer,
-        StockClass storage stockClass
-    ) external {
+    function createCancellation(StockParamsQuantity memory params) external {
         ActivePosition memory activePosition = positions.activePositions[params.stakeholder_id][params.security_id];
 
         _checkActivePositionExists(activePosition, params.stakeholder_id, params.security_id);
@@ -124,7 +102,7 @@ library StockLib {
             StockIssuance memory balanceIssuance =
                 TxHelper.createStockIssuanceStructForTransfer(transferParams, transferParams.transferor_stakeholder_id);
 
-            _updateContext(balanceIssuance, positions, activeSecs, issuer, stockClass, transactions);
+            _updateContext(balanceIssuance);
 
             balance_security_id = balanceIssuance.security_id;
         }
@@ -133,26 +111,19 @@ library StockLib {
             params.nonce, params.quantity, params.comments, params.security_id, params.reason_text, balance_security_id
         );
 
-        TxHelper.createTx(TxType.STOCK_CANCELLATION, abi.encode(cancellation), transactions);
+        TxHelper.createTx(TxType.STOCK_CANCELLATION, abi.encode(cancellation));
 
         _subtractSharesIssued(issuer, stockClass, activePosition.quantity);
 
-        DeleteContext.deleteActivePosition(params.stakeholder_id, params.security_id, positions);
+        DeleteContext.deleteActivePosition(params.stakeholder_id, params.security_id);
         DeleteContext.deleteActiveSecurityIdsByStockClass(
-            params.stakeholder_id, params.stock_class_id, params.security_id, activeSecs
+            params.stakeholder_id, params.stock_class_id, params.security_id
         );
     }
 
-    function createReissuance(
-        StockParams memory params,
-        uint256 nonce,
-        bytes16[] memory resulting_security_ids,
-        ActivePositions storage positions,
-        SecIdsStockClass storage activeSecs,
-        bytes[] storage transactions,
-        Issuer storage issuer,
-        StockClass storage stockClass
-    ) external {
+    function createReissuance(StockParams memory params, uint256 nonce, bytes16[] memory resulting_security_ids)
+        external
+    {
         ActivePosition memory activePosition = positions.activePositions[params.stakeholder_id][params.security_id];
 
         _checkActivePositionExists(activePosition, params.stakeholder_id, params.security_id);
@@ -161,25 +132,17 @@ library StockLib {
             nonce, params.comments, params.security_id, resulting_security_ids, params.reason_text
         );
 
-        TxHelper.createTx(TxType.STOCK_REISSUANCE, abi.encode(reissuance), transactions);
+        TxHelper.createTx(TxType.STOCK_REISSUANCE, abi.encode(reissuance));
 
         _subtractSharesIssued(issuer, stockClass, activePosition.quantity);
 
-        DeleteContext.deleteActivePosition(params.stakeholder_id, params.security_id, positions);
+        DeleteContext.deleteActivePosition(params.stakeholder_id, params.security_id);
         DeleteContext.deleteActiveSecurityIdsByStockClass(
-            params.stakeholder_id, params.stock_class_id, params.security_id, activeSecs
+            params.stakeholder_id, params.stock_class_id, params.security_id
         );
     }
 
-    function createRepurchase(
-        StockParamsQuantity memory params,
-        uint256 price,
-        ActivePositions storage positions,
-        SecIdsStockClass storage activeSecs,
-        bytes[] storage transactions,
-        Issuer storage issuer,
-        StockClass storage stockClass
-    ) external {
+    function createRepurchase(StockParamsQuantity memory params, uint256 price) external {
         ActivePosition memory activePosition = positions.activePositions[params.stakeholder_id][params.security_id];
 
         _checkActivePositionExists(activePosition, params.stakeholder_id, params.security_id);
@@ -201,64 +164,47 @@ library StockLib {
             StockIssuance memory balanceIssuance =
                 TxHelper.createStockIssuanceStructForTransfer(transferParams, transferParams.transferor_stakeholder_id);
 
-            _updateContext(balanceIssuance, positions, activeSecs, issuer, stockClass, transactions);
+            _updateContext(balanceIssuance);
 
             balance_security_id = balanceIssuance.security_id;
         }
 
         StockRepurchase memory repurchase = TxHelper.createStockRepurchaseStruct(params, price);
 
-        TxHelper.createTx(TxType.STOCK_REPURCHASE, abi.encode(repurchase), transactions);
+        TxHelper.createTx(TxType.STOCK_REPURCHASE, abi.encode(repurchase));
 
         _subtractSharesIssued(issuer, stockClass, activePosition.quantity);
 
-        DeleteContext.deleteActivePosition(params.stakeholder_id, params.security_id, positions);
+        DeleteContext.deleteActivePosition(params.stakeholder_id, params.security_id);
         DeleteContext.deleteActiveSecurityIdsByStockClass(
-            params.stakeholder_id, params.stock_class_id, params.security_id, activeSecs
+            params.stakeholder_id, params.stock_class_id, params.security_id
         );
     }
 
-    function createRetraction(
-        StockParams memory params,
-        uint256 nonce,
-        ActivePositions storage positions,
-        SecIdsStockClass storage activeSecs,
-        bytes[] storage transactions,
-        Issuer storage issuer,
-        StockClass storage stockClass
-    ) external {
+    function createRetraction(StockParams memory params, uint256 nonce) external {
         ActivePosition memory activePosition = positions.activePositions[params.stakeholder_id][params.security_id];
 
         _checkActivePositionExists(activePosition, params.stakeholder_id, params.security_id);
 
         StockRetraction memory retraction =
             TxHelper.createStockRetractionStruct(nonce, params.comments, params.security_id, params.reason_text);
-        TxHelper.createTx(TxType.STOCK_RETRACTION, abi.encode(retraction), transactions);
+        TxHelper.createTx(TxType.STOCK_RETRACTION, abi.encode(retraction));
 
         _subtractSharesIssued(issuer, stockClass, activePosition.quantity);
 
-        DeleteContext.deleteActivePosition(params.stakeholder_id, params.security_id, positions);
+        DeleteContext.deleteActivePosition(params.stakeholder_id, params.security_id);
         DeleteContext.deleteActiveSecurityIdsByStockClass(
-            params.stakeholder_id, params.stock_class_id, params.security_id, activeSecs
+            params.stakeholder_id, params.stock_class_id, params.security_id
         );
     }
 
-    function createAcceptance(uint256 nonce, bytes16 securityId, string[] memory comments, bytes[] storage transactions)
-        external
-    {
+    function createAcceptance(uint256 nonce, bytes16 securityId, string[] memory comments) external {
         StockAcceptance memory acceptance = TxHelper.createStockAcceptanceStruct(nonce, comments, securityId);
 
-        TxHelper.createTx(TxType.STOCK_ACCEPTANCE, abi.encode(acceptance), transactions);
+        TxHelper.createTx(TxType.STOCK_ACCEPTANCE, abi.encode(acceptance));
     }
 
-    function _updateContext(
-        StockIssuance memory issuance,
-        ActivePositions storage positions,
-        SecIdsStockClass storage activeSecs,
-        Issuer storage issuer,
-        StockClass storage stockClass,
-        bytes[] storage transactions
-    ) internal {
+    function _updateContext(StockIssuance memory issuance) internal {
         activeSecs.activeSecurityIdsByStockClass[issuance.params.stakeholder_id][issuance.params.stock_class_id].push(
             issuance.security_id
         );
@@ -273,28 +219,20 @@ library StockLib {
         issuer.shares_issued = issuer.shares_issued + issuance.params.quantity;
         stockClass.shares_issued = stockClass.shares_issued + issuance.params.quantity;
 
-        TxHelper.createTx(TxType.STOCK_ISSUANCE, abi.encode(issuance), transactions);
+        TxHelper.createTx(TxType.STOCK_ISSUANCE, abi.encode(issuance));
     }
 
     function _safeNow() internal view returns (uint40) {
         return uint40(block.timestamp);
     }
 
-    function _subtractSharesIssued(Issuer storage issuer, StockClass storage stockClass, uint256 quantity) internal {
+    function _subtractSharesIssued(uint256 quantity) internal {
         issuer.shares_issued = issuer.shares_issued - quantity;
         stockClass.shares_issued = stockClass.shares_issued - quantity;
     }
 
     // isBuyerVerified is a placeholder for a signature, account or hash that confirms the buyer's identity. TODO: delete if not necessary
-    function _transferSingleStock(
-        StockTransferParams memory params,
-        bytes16 transferorSecurityId,
-        ActivePositions storage positions,
-        SecIdsStockClass storage activeSecs,
-        bytes[] storage transactions,
-        Issuer storage issuer,
-        StockClass storage stockClass
-    ) internal {
+    function _transferSingleStock(StockTransferParams memory params, bytes16 transferorSecurityId) internal {
         ActivePosition memory transferorActivePosition =
             positions.activePositions[params.transferor_stakeholder_id][transferorSecurityId];
 
@@ -303,7 +241,7 @@ library StockLib {
         StockIssuance memory transfereeIssuance =
             TxHelper.createStockIssuanceStructForTransfer(params, params.transferee_stakeholder_id);
 
-        _updateContext(transfereeIssuance, positions, activeSecs, issuer, stockClass, transactions);
+        _updateContext(transfereeIssuance);
 
         uint256 balanceForTransferor = transferorActivePosition.quantity - params.quantity;
 
@@ -325,7 +263,7 @@ library StockLib {
             StockIssuance memory transferorBalanceIssuance =
                 TxHelper.createStockIssuanceStructForTransfer(newParams, newParams.transferor_stakeholder_id);
 
-            _updateContext(transferorBalanceIssuance, positions, activeSecs, issuer, stockClass, transactions);
+            _updateContext(transferorBalanceIssuance);
 
             balance_security_id = transferorBalanceIssuance.security_id;
         }
@@ -334,13 +272,13 @@ library StockLib {
             params.nonce, params.quantity, transferorSecurityId, transfereeIssuance.security_id, balance_security_id
         );
 
-        TxHelper.createTx(TxType.STOCK_TRANSFER, abi.encode(transfer), transactions);
+        TxHelper.createTx(TxType.STOCK_TRANSFER, abi.encode(transfer));
 
         _subtractSharesIssued(issuer, stockClass, transferorActivePosition.quantity);
 
-        DeleteContext.deleteActivePosition(params.transferor_stakeholder_id, transferorSecurityId, positions);
+        DeleteContext.deleteActivePosition(params.transferor_stakeholder_id, transferorSecurityId);
         DeleteContext.deleteActiveSecurityIdsByStockClass(
-            params.transferor_stakeholder_id, params.stock_class_id, transferorSecurityId, activeSecs
+            params.transferor_stakeholder_id, params.stock_class_id, transferorSecurityId
         );
     }
 
@@ -369,5 +307,37 @@ library StockLib {
         if (!isBuyerVerified) {
             revert UnverifiedBuyer();
         }
+    }
+
+    function adjustIssuerAuthorizedShares(
+        uint256 nonce,
+        uint256 newSharesAuthorized,
+        string[] memory comments,
+        string memory boardApprovalDate,
+        string memory stockholderApprovalDate
+    ) internal {
+        IssuerAuthorizedSharesAdjustment memory adjustment = TxHelper.adjustIssuerAuthorizedShares(
+            nonce, newSharesAuthorized, comments, boardApprovalDate, stockholderApprovalDate, issuer.id
+        );
+
+        issuer.shares_authorized = newSharesAuthorized;
+
+        TxHelper.createTx(TxType.ISSUER_AUTHORIZED_SHARES_ADJUSTMENT, abi.encode(adjustment));
+    }
+
+    function adjustStockClassAuthorizedShares(
+        uint256 nonce,
+        uint256 newSharesAuthorized,
+        string[] memory comments,
+        string memory boardApprovalDate,
+        string memory stockholderApprovalDate
+    ) internal {
+        StockClassAuthorizedSharesAdjustment memory adjustment = TxHelper.adjustStockClassAuthorizedShares(
+            nonce, newSharesAuthorized, comments, boardApprovalDate, stockholderApprovalDate, stockClass.id
+        );
+
+        stockClass.shares_authorized = newSharesAuthorized;
+
+        TxHelper.createTx(TxType.STOCK_CLASS_AUTHORIZED_SHARES_ADJUSTMENT, abi.encode(adjustment));
     }
 }

@@ -44,7 +44,7 @@ struct Tx {
 library TxHelper {
     event TxCreated(uint256 index, TxType txType, bytes txData);
 
-    function createTx(TxType txType, bytes memory txData, bytes[] storage transactions) internal {
+    function createTx(TxType txType, bytes memory txData) internal {
         transactions.push(txData);
         emit TxCreated(transactions.length, txType, txData);
     }
@@ -53,17 +53,6 @@ library TxHelper {
         bytes16 deterministicValue =
             bytes16(keccak256(abi.encodePacked(stakeholderId, block.timestamp, block.prevrandao, nonce)));
         return deterministicValue;
-    }
-
-    function createStockIssuanceStructByTA(uint256 nonce, StockIssuanceParams memory params)
-        internal
-        view
-        returns (StockIssuance memory issuance)
-    {
-        bytes16 id = generateDeterministicUniqueID(params.stakeholder_id, nonce);
-        bytes16 secId = generateDeterministicUniqueID(params.stock_class_id, nonce);
-
-        return StockIssuance(id, "TX_STOCK_ISSUANCE", secId, params);
     }
 
     // TODO: do we need to have more information from the previous transferor issuance in this new issuance?
