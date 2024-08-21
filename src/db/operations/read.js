@@ -46,6 +46,10 @@ export const readVestingTermsById = async (id) => {
     return await findById(VestingTerms, id);
 };
 
+export const readHistoricalTransactionById = async (tx) => {
+    return await findOne(HistoricalTransaction, { transaction: tx });
+};
+
 // READ Multiple
 export const readHistoricalTransactionByIssuerId = async (issuerId) => {
     return await find(HistoricalTransaction, { issuer: issuerId }).populate("transaction");
