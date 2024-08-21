@@ -17,6 +17,7 @@ function convertToUUID(uuidBytes16) {
 }
 
 function convertBytes16ToUUID(obj) {
+    if (!obj) return null;
     // single value
     if (typeof obj === "string" && obj.startsWith("0x")) {
         return convertToUUID(obj);

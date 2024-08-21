@@ -1,0 +1,63 @@
+forge script script/CapTableFactory.s.sol --fork-url https://base-mainnet.g.alchemy.com/v2/T8VQE0N9YpEO3dgTSqg_PjgeRKhRge3w --broadcast --private-key 0xb86cfadd77172440622d531fc2773f1b395cc8b6c20cacd9fc5eaee0b127636e --chain 8453
+
+c➜  chain git:(dev) ✗ forge script script/CapTableFactory.s.sol --fork-url https://base-mainnet.g.alchemy.com/v2/T8VQE0N9YpEO3dgTSqg_PjgeRKhRge3w --broadcast --private-key 0xb86cfadd77172440622d531fc2773f1b395cc8b6c20cacd9fc5eaee0b127636e --chain 8453
+[⠊] Compiling...
+No files changed, compilation skipped
+Script ran successfully.
+
+== Logs ==
+  Upgrading CapTableFactory with CapTable implementation
+  Deploying CapTableFactory and CapTable implementation
+  CapTable implementation deployed at: 0x9CB790383dC9293EF9EB7c7bCbD894d0332f05C5
+  CapTableFactory deployed at: 0x97C5d11eb07DdeE5C3A805F6602eE72Ad64C135a
+
+## Setting up 1 EVM.
+
+==========================
+
+Chain 8453
+
+Estimated gas price: 0.025621347 gwei
+
+Estimated total gas used for script: 11854553
+
+Estimated amount required: 0.000303729615942891 ETH
+
+==========================
+
+##### base
+✅  [Success]Hash: 0xd81849b6c569e3472013cf2d4ae41421732a3ea134521b0df09361c1c96c7efd
+Contract Address: 0x97C5d11eb07DdeE5C3A805F6602eE72Ad64C135a
+Block: 16571397
+Paid: 0.000014393162040768 ETH (1095304 gas * 0.013140792 gwei)
+
+
+##### base
+✅  [Success]Hash: 0x3ca11c93ceacb88594bf99bd8cfdb58a5ecb81d896b454a8970ca8247b940d37
+Block: 16571396
+Paid: 0.000006854011217836 ETH (521663 gas * 0.013138772 gwei)
+
+
+##### base
+✅  [Success]Hash: 0x7b5535add8e6266b4c75cd64f5f7cc32610bd8f3cabe49a15d5354cd2ce45085
+Block: 16571396
+Paid: 0.000032792877091992 ETH (2495886 gas * 0.013138772 gwei)
+
+
+##### base
+✅  [Success]Hash: 0x418fbbb5141ae76cb09c88a1f4dffa1e2d133c19fb96bc7c1a4454b120a624f5
+Contract Address: 0x9CB790383dC9293EF9EB7c7bCbD894d0332f05C5
+Block: 16571397
+Paid: 0.000062911659967128 ETH (4787509 gas * 0.013140792 gwei)
+
+✅ Sequence #1 on base | Total Paid: 0.000116951710317724 ETH (8900362 gas * avg 0.013139782 gwei)
+
+
+==========================
+
+ONCHAIN EXECUTION COMPLETE & SUCCESSFUL.
+
+Transactions saved to: /Users/adam/.ghq/github.com/fairmint/open-captable-protocol/chain/broadcast/CapTableFactory.s.sol/8453/run-latest.json
+
+Sensitive values saved to: /Users/adam/.ghq/github.com/fairmint/open-captable-protocol/chain/cache/CapTableFactory.s.sol/8453/run-latest.json
+

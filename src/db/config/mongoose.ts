@@ -9,6 +9,7 @@ const DATABASE_OVERRIDE = process.env.DATABASE_OVERRIDE;
 export const connectDB = async () => {
     const connectOptions = DATABASE_OVERRIDE ? { dbName: DATABASE_OVERRIDE } : {};
     try {
+        console.log(" Mongo connecting...", DATABASE_URL);
         await mongoose.connect(DATABASE_URL, connectOptions);
         console.log("✅ | Mongo connected successfully", DATABASE_URL);
         return mongoose.connection;

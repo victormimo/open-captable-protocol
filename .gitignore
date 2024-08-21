@@ -46,3 +46,4 @@ tsconfig.tsbuildinfo
 
 # Private keys
 *.pem
+.env.*
