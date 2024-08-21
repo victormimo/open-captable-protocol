@@ -6,8 +6,8 @@ export const reflectStakeholder = async ({ issuerId, stakeholder }) => {
     console.log("Reflecting Stakeholder into fairmint...");
     console.log({ issuerId, stakeholder });
 
+    let webHookUrl = `${API_URL}/ocp/reflectStakeholder?portalId=${issuerId}`;
     try {
-        const webHookUrl = `${API_URL}/ocp/reflectStakeholder?portalId=${issuerId}`;
         const body = {
             // use primary contact if the main name info not available
             legal_name: get(stakeholder, "name.legal_name", null) || get(stakeholder, "primary_contact.name.legal_name"),
