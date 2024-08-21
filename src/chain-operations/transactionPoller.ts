@@ -30,7 +30,7 @@ import {
     handleStockTransfer,
 } from "./transactionHandlers.js";
 import axios from "axios";
-import { API_URL } from "./utils.js";
+import { API_URL } from "../fairmint/config.js";
 
 const abiCoder = new AbiCoder();
 
@@ -75,7 +75,7 @@ export const stopEventProcessing = async () => {
     }
 };
 
-export const pollingSleepTime = 300000; // 5 mins
+export const pollingSleepTime = 5000;
 
 export const startEventProcessing = async (finalizedOnly: boolean, dbConn) => {
     _keepProcessing = true;
@@ -96,12 +96,13 @@ export const startEventProcessing = async (finalizedOnly: boolean, dbConn) => {
 };
 
 const processEvents = async (dbConn, contract, provider, issuer, txHelper, finalizedOnly, maxBlocks = 1500, maxEvents = 250) => {
+    console.log("Processing events for issuer", issuer._id);
     /*
     We process up to `maxEvents` across `maxBlocks` to ensure our transaction sizes dont get too big and bog down our db
     */
     let { _id: issuerId, last_processed_block: lastProcessedBlock, tx_hash: deployedTxHash } = issuer;
     const { number: latestBlock } = await provider.getBlock(finalizedOnly ? "finalized" : "latest");
-    // console.log("Processing for issuer", {issuerId, lastProcessedBlock, deployedTxHash, latestBlock});
+    const startTime = Date.now();
     if (lastProcessedBlock === null) {
         const receipt = await provider.getTransactionReceipt(deployedTxHash);
         if (!receipt) {
@@ -157,6 +158,8 @@ const processEvents = async (dbConn, contract, provider, issuer, txHelper, final
         await persistEvents(issuerId, events);
         await updateLastProcessed(issuerId, endBlock);
     }, dbConn);
+    const endTime = Date.now();
+    console.log(`Time taken : ${endTime - startTime} ms`);
 };
 
 const issuerDeployed = async (issuerId, receipt, contract, dbConn) => {
@@ -194,6 +197,7 @@ const persistEvents = async (issuerId, events: QueuedEvent[]) => {
         // console.log("persistEvent: ", {type, data, timestamp});
         if (txHandleFunc) {
             // @ts-ignore
+            // TODO: check if transaction exists in historical txs
             await txHandleFunc(data, issuerId, timestamp);
             continue;
         }
@@ -216,6 +220,7 @@ export const trimEvents = (origEvents: QueuedEvent[], maxEvents, endBlock) => {
         // Include the entire next block
         const includeBlock = events[index].o.blockNumber;
         index++;
+        // skipping blocs with the same blockNumber
         while (index < events.length && events[index].o.blockNumber === includeBlock) {
             index++;
         }
