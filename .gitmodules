@@ -16,3 +16,6 @@
 [submodule "chain/lib/solidstate-solidity"]
 	path = chain/lib/solidstate-solidity
 	url = https://github.com/solidstate-network/solidstate-solidity
+[submodule "chain/lib/diamond-3-hardhat"]
+	path = chain/lib/diamond-3-hardhat
+	url = https://github.com/mudgen/diamond-3-hardhat
