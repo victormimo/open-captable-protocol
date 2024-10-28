@@ -5,7 +5,7 @@ import {AccessControl} from "solidstate-solidity/access/access_control/AccessCon
 bytes32 constant ADMIN_ROLE = keccak256("ADMIN");
 bytes32 constant OPERATOR_ROLE = keccak256("OPERATOR");
 
-abstract contract CAPAccessControlFacet is AccessControl {
+contract CAPAccessControlFacet is AccessControl {
     modifier onlyAdmin() {
         require(_isAdmin(), "Does not have admin role");
         _;

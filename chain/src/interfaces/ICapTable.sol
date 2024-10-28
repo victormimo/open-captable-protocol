@@ -23,7 +23,7 @@ interface ICapTable {
     function stockClassIndex(bytes16 index) external view returns (uint256);
 
     /// @notice Initializer for the CapTable, sets access control and initializes issuer struct.
-    function initialize(bytes16 id, uint256 initial_shares_authorized, address admin) external;
+    function initialize(bytes16 id, uint256 initialSharesAuthorized, address admin) external;
 
     function seedMultipleActivePositionsAndSecurityIds(
         bytes16[] calldata stakeholderIds,
@@ -55,10 +55,10 @@ interface ICapTable {
     ) external;
 
     function createStockClass(
-        bytes16 _id,
-        string memory _class_type,
-        uint256 _price_per_share,
-        uint256 _initial_share_authorized
+        bytes16 id,
+        string memory classType,
+        uint256 pricePerShare,
+        uint256 initialShareAuthorized
     ) external;
 
     function createStockLegendTemplate(bytes16 _id) external;
@@ -91,7 +91,7 @@ interface ICapTable {
     function retractStockIssuance(StockParams calldata params) external;
 
     /// Reissuance assumes an issuance transaction has been created and it's tied here under resulting_security_ids
-    function reissueStock(StockParams calldata params, bytes16[] memory resulting_security_ids) external;
+    function reissueStock(StockParams calldata params, bytes16[] memory resultingSecurityIds) external;
 
     function cancelStock(StockParams calldata params, uint256 quantity) external;
 
@@ -101,6 +101,6 @@ interface ICapTable {
         bytes16 stockClassId,
         bool isBuyerVerified,
         uint256 quantity,
-        uint256 share_price
+        uint256 sharePrice
     ) external;
 }

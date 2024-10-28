@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import "./TransactionLib.sol";
+import {SecurityLawExemption} from "./Structs.sol";
 
 library TransactionHelper {
     function generateDeterministicUniqueID(bytes16 stakeholderId, uint256 nonce) internal view returns (bytes16) {
@@ -37,7 +39,7 @@ library TransactionHelper {
             "", // Board approval date (optional)
             "", // Stockholder approval date (optional)
             "", // Consideration text (optional)
-            new string[](0) // Security law exemptions (optional)
+            new SecurityLawExemption[](0) // Security law exemptions (optional)
         );
         return StockIssuance(
             id, // ID

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import {
@@ -15,6 +16,11 @@ import {StockLib} from "../lib/StockLib.sol";
 import {CAPAccessControlFacet} from "./CAPAccessControlFacet.sol";
 
 contract StockFacet is CAPAccessControlFacet {
+    function issuer() external view returns (bytes16 id, uint256 shares_issued, uint256 shares_authorized) {
+        Issuer memory i = StockLib._s().issuer;
+        return (i.id, i.shares_issued, i.shares_authorized);
+    }
+
     function getTotalActiveSecuritiesCount() external view returns (uint256) {
         return StockLib._getTotalActiveSecuritiesCount();
     }
