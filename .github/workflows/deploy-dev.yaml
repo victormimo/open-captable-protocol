@@ -24,6 +24,7 @@ jobs:
           echo "CHAIN_ID=${{ secrets.CHAIN_ID }}" >> .env
           echo "PRIVATE_KEY=${{ secrets.PRIVATE_KEY }}" >> .env
           echo "ETHERSCAN_L2_API_KEY=${{ secrets.ETHERSCAN_L2_API_KEY }}" >> .env
+          echo "SENTRY_DSN=${{ secrets.SENTRY_DSN }}" >> .env
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -64,6 +65,7 @@ jobs:
             docker run --name ocp-dev -d -p 8080:8080 \
             --restart always \
             -e NODE_ENV='development' \
+            -e SENTRY_DSN="${{ secrets.SENTRY_DSN }}" \
             -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
             -e RPC_URL="${{ secrets.RPC_URL }}" \
             -e CHAIN_ID="${{ secrets.CHAIN_ID }}" \

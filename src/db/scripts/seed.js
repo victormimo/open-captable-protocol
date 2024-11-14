@@ -5,6 +5,7 @@ import stockLegendTemplateSchema from "../../../ocf/schema/objects/StockLegendTe
 import stockPlanSchema from "../../../ocf/schema/objects/StockPlan.schema.json";
 import valuationSchema from "../../../ocf/schema/objects/Valuation.schema.json";
 import vestingTermsSchema from "../../../ocf/schema/objects/VestingTerms.schema.json";
+import get from "lodash/get.js";
 import {
     createIssuer,
     createStakeholder,
@@ -148,6 +149,15 @@ export async function verifyManifest(manifestArr) {
     await validateEntity(incomingValuations, valuationSchema);
     await validateEntity(incomingVestingTerms, vestingTermsSchema);
     await processTransactionEntity(incomingTransactions);
+    return {
+        issuer: incomingIssuer,
+        stakeholders: get(incomingStakeholders, "items", []),
+        stockClasses: get(incomingStockClasses, "items", []),
+        stockPlans: get(incomingStockPlans, "items", []),
+        valuations: get(incomingValuations, "items", []),
+        vestingTerms: get(incomingVestingTerms, "items", []),
+        transactions: get(incomingTransactions, "items", []),
+    };
 }
 
 async function seedDB(manifestArr) {

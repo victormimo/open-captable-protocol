@@ -1,5 +1,4 @@
 import { interpret } from "xstate";
-import { preProcessorCache } from "../utils/caches.ts";
 import { parentMachine } from "./parent.js";
 
 /*
@@ -7,6 +6,8 @@ import { parentMachine } from "./parent.js";
     if we ever need them, consider saving them to the DB.
 
 */
+const preProcessorCache = {};
+
 const preProcessManifestTxs = (issuer, txs, stockClasses) => {
     const parent = interpret(parentMachine);
 

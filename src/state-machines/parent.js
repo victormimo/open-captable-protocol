@@ -111,6 +111,7 @@ export const parentMachine = createMachine(
                     transactions: [...context.transactions, event.value],
                 };
             }),
+            // Only supporting full cancellation for now
             preCancel: assign((context, event) => {
                 const currentTransaction = event.value;
                 const { security_id } = currentTransaction;

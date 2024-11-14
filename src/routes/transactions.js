@@ -451,6 +451,16 @@ transactions.post("/issuance/equity-compensation", async (req, res) => {
 
         await validateInputAgainstOCF(incomingEquityCompensationIssuance, equityCompensationIssuanceSchema);
 
+        const stock_class_id = get(incomingEquityCompensationIssuance, "stock_class_id");
+        if (!stock_class_id) {
+            return res.status(400).send({ error: "Stock class id is required" });
+        }
+
+        const stockClass = await readStockClassById(stock_class_id);
+        if (!stockClass || !stockClass._id) {
+            return res.status(404).send({ error: "Stock class not found on OCP" });
+        }
+
         // save to DB
         const createdIssuance = await createEquityCompensationIssuance({ ...incomingEquityCompensationIssuance, issuer: issuerId });
 
@@ -490,6 +500,17 @@ transactions.post("/issuance/equity-compensation-fairmint-reflection", async (re
         };
 
         await validateInputAgainstOCF(incomingEquityCompensationIssuance, equityCompensationIssuanceSchema);
+
+        const stock_class_id = get(incomingEquityCompensationIssuance, "stock_class_id");
+
+        if (!stock_class_id) {
+            return res.status(400).send({ error: "Stock class id is required" });
+        }
+
+        const stockClass = await readStockClassById(stock_class_id);
+        if (!stockClass || !stockClass._id) {
+            return res.status(404).send({ error: "Stock class not found on OCP" });
+        }
 
         const stakeholder = await readStakeholderById(incomingEquityCompensationIssuance.stakeholder_id);
 

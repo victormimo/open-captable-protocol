@@ -4,6 +4,7 @@ import { updateIssuerById } from "../db/operations/update.js";
 import seedDB, { verifyManifest } from "../db/scripts/seed.js";
 import { convertUUIDToBytes16 } from "../utils/convertUUID.js";
 import processManifest from "../utils/processManifest.js";
+import { verifyCapTable } from "../rxjs/index.js";
 
 const router = Router();
 
@@ -31,8 +32,13 @@ router.post("/mint-cap-table", async (req, res) => {
 router.post("/verify-cap-table", async (req, res) => {
     try {
         const manifest = await processManifest(req);
-        await verifyManifest(manifest);
-        res.status(200).send({ valid: true });
+        const data = await verifyManifest(manifest);
+        const result = await verifyCapTable(data);
+        if (result.valid) {
+            res.status(200).send({ valid: true });
+        } else {
+            res.status(200).send({ valid: false, errors: result.errors });
+        }
     } catch (error) {
         console.error({ error });
         res.status(500).send({ error: String(error), valid: false });

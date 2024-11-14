@@ -8,6 +8,7 @@
   "type": "module",
   "scripts": {
     "t": "npx tsx src/test.mjs",
+    "test-captables": "npx tsx testCaptables.js",
     "prod": "npx tsx src/app.js",
     "dev": "npx tsx watch src/app.js",
     "lint": "eslint \"src/**/*.{js,ts,mjs,mts}\"",
@@ -24,6 +25,7 @@
     "export-manifest": "cd src/db/samples && zip -r fairmint.zip fairmint && mv fairmint.zip $HOME/Downloads"
   },
   "dependencies": {
+    "@sentry/node": "^8.37.1",
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
     "axios": "^1.4.0",
@@ -37,6 +39,7 @@
     "joi": "^17.13.1",
     "mongoose": "^7.4.2",
     "npx": "^10.2.2",
+    "rxjs": "^7.8.1",
     "solc": "^0.8.20",
     "tsx": "^4.7.0",
     "xstate": "^4.38.2",

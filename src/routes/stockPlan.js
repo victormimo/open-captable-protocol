@@ -65,7 +65,8 @@ stockPlan.get("/verify-quantity-remaining/id/:id", async (req, res) => {
 stockPlan.post("/create", async (req, res) => {
     const { data, issuerId } = req.body;
     try {
-        const issuer = await readIssuerById(issuerId);
+        await readIssuerById(issuerId);
+        setTag("issuerId", issuerId);
 
         const incomingStockPlanToValidate = {
             id: uuid(),
@@ -75,7 +76,7 @@ stockPlan.post("/create", async (req, res) => {
 
         const incomingStockPlanForDB = {
             ...incomingStockPlanToValidate,
-            issuer: issuer._id,
+            issuer: issuerId,
         };
 
         await validateInputAgainstOCF(incomingStockPlanToValidate, stockPlanSchema);
