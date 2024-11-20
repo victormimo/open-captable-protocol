@@ -1,5 +1,6 @@
 import { getContractInstance } from "../chain-operations/getContractInstances.js";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 interface CachePayload {
     contract: any;
     provider: any;

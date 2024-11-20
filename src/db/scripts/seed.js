@@ -32,7 +32,6 @@ import txIssuerAuthorizedSharesAdjustmentSchema from "../../../ocf/schema/object
 import txStockPlanPoolAdjustmentSchema from "../../../ocf/schema/objects/transactions/adjustment/StockPlanPoolAdjustment.schema.json";
 import txEquityCompensationExerciseSchema from "../../../ocf/schema/objects/transactions/exercise/EquityCompensationExercise.schema.json";
 import validateInputAgainstOCF from "../../utils/validateInputAgainstSchema.js";
-import preProcessManifestTxs from "../../state-machines/process.js";
 
 async function processEntity(inputEntities, createEntityFunction, schema, issuerId) {
     console.log(`Adding ${createEntityFunction.name.replace("create", "")} to DB`);
@@ -196,7 +195,6 @@ async function seedDB(manifestArr) {
     await processEntity(incomingVestingTerms, createVestingTerms, vestingTermsSchema, issuerId);
     await processTransactionEntity(incomingTransactions);
 
-    preProcessManifestTxs(incomingIssuer, incomingTransactions, incomingStockClasses);
     await addTransactions(incomingTransactions, issuerId);
 
     return issuer;

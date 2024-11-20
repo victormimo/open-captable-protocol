@@ -66,7 +66,6 @@ stockPlan.post("/create", async (req, res) => {
     const { data, issuerId } = req.body;
     try {
         await readIssuerById(issuerId);
-        setTag("issuerId", issuerId);
 
         const incomingStockPlanToValidate = {
             id: uuid(),

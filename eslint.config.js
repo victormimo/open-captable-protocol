@@ -7,7 +7,6 @@ export default [
     {
         files: ["**/*.{js,ts}"],
         ignores: ["**/*.json", "node_modules/**"],
-        ...js.configs.recommended,
         languageOptions: {
             ecmaVersion: 2022,
             sourceType: "module",
@@ -16,6 +15,7 @@ export default [
             },
         },
         rules: {
+            ...js.configs.recommended.rules,
             "no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
             "no-console": ["warn", { allow: ["warn", "error", "log"] }],
         },

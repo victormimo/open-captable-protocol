@@ -9,10 +9,6 @@ import VestingTerm from "../db/objects/VestingTerms";
 import HistoricalTransaction from "../db/objects/HistoricalTransaction";
 
 import { find } from "../db/operations/atomic";
-import { exportManifestToOCX } from "../scripts/export";
-import processManifest from "../utils/processManifest";
-import { verifyManifest } from "../db/scripts/seed";
-
 const exportCaptable = Router();
 
 exportCaptable.get("/ocf", async (req, res) => {
@@ -48,21 +44,4 @@ exportCaptable.get("/ocf", async (req, res) => {
     }
 });
 
-exportCaptable.post("/ocx", async (req, res) => {
-    try {
-        const manifest = await processManifest(req);
-        await verifyManifest(manifest);
-        const xlsx = await exportManifestToOCX(manifest);
-        if (!xlsx) {
-            return res.status(500).send("Failed to generate OCX file");
-        }
-        const buffer = await xlsx.writeBuffer();
-        res.setHeader("Content-Disposition", 'attachment; filename="export.xlsx"');
-        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        res.send({ data: buffer });
-    } catch (error) {
-        console.error("Error verifying manifest:", error);
-        res.status(500).send({ error: String(error), valid: false });
-    }
-});
 export default exportCaptable;

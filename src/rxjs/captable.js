@@ -74,7 +74,7 @@ export const processCaptableStockIssuance = (state, transaction, _stakeholder, o
     return { summary: newSummary };
 };
 
-export const captableInitialState = (_stakeholders) => {
+export const captableInitialState = () => {
     // Initialize sections with empty rows
     return {
         summary: {

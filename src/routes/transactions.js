@@ -555,7 +555,6 @@ transactions.post("/issuance/equity-compensation-fairmint-reflection", async (re
             expiration_date: get(incomingEquityCompensationIssuance, "expiration_date", null),
             termination_exercise_windows: get(incomingEquityCompensationIssuance, "termination_exercise_windows", []),
             vestings: get(incomingEquityCompensationIssuance, "vestings", []),
-            expiration_date: get(incomingEquityCompensationIssuance, "expiration_date", null),
             date: get(incomingEquityCompensationIssuance, "date", new Date().toISOString().split("T")[0]),
             vesting_terms_id: get(incomingEquityCompensationIssuance, "vesting_terms_id", null),
         });
