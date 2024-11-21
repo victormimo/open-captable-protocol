@@ -20,36 +20,54 @@ stats.get("/dashboard", async (req, res) => {
 });
 
 stats.get("/rxjs/dashboard", async (req, res) => {
-    const { issuerId } = req.query;
-    setTag("issuerId", issuerId);
-    console.log("issuerId", issuerId);
+    try {
+        const { issuerId } = req.query;
+        setTag("issuerId", issuerId);
 
-    const rxjsData = await dashboardStats(issuerId);
+        const issuer = await readIssuerById(issuerId);
+        if (!issuer) {
+            return res.status(404).send({ error: "Issuer not found" });
+        }
 
-    if (rxjsData?.errors?.size > 0) {
-        captureException(new Error(Array.from(rxjsData.errors).join("\n")));
-        return res.status(500).send({ errors: Array.from(rxjsData.errors) });
+        const rxjsData = await dashboardStats(issuerId);
+
+        if (rxjsData?.errors?.size > 0) {
+            captureException(new Error(Array.from(rxjsData.errors).join("\n")));
+            return res.status(500).send({ errors: Array.from(rxjsData.errors) });
+        }
+
+        console.log("rxjsData", rxjsData);
+
+        res.status(200).send(rxjsData);
+    } catch (error) {
+        captureException(error);
+        res.status(500).send({ error });
     }
-
-    console.log("rxjsData", rxjsData);
-
-    res.status(200).send(rxjsData);
 });
 
 stats.get("/rxjs/captable", async (req, res) => {
-    const { issuerId } = req.query;
-    setTag("issuerId", issuerId);
-    console.log("issuerId", issuerId);
+    try {
+        const { issuerId } = req.query;
+        setTag("issuerId", issuerId);
 
-    const rxjsData = await captableStats(issuerId);
-    if (rxjsData?.errors?.size > 0) {
-        captureException(new Error(Array.from(rxjsData.errors).join("\n")));
-        return res.status(500).send({ errors: Array.from(rxjsData.errors) });
+        const issuer = await readIssuerById(issuerId);
+        if (!issuer) {
+            return res.status(404).send({ error: "Issuer not found" });
+        }
+
+        const rxjsData = await captableStats(issuerId);
+        if (rxjsData?.errors?.size > 0) {
+            captureException(new Error(Array.from(rxjsData.errors).join("\n")));
+            return res.status(500).send({ errors: Array.from(rxjsData.errors) });
+        }
+
+        console.log("rxjsData", rxjsData);
+
+        res.status(200).send(rxjsData);
+    } catch (error) {
+        captureException(error);
+        res.status(500).send({ error });
     }
-
-    console.log("rxjsData", rxjsData);
-
-    res.status(200).send(rxjsData);
 });
 
 stats.get("/captable", async (req, res) => {
