@@ -51,7 +51,6 @@ contract DeployCapTableFactoryDeployLocalScript is Script {
         CapTableFactory capTableFactory = CapTableFactory(factory);
 
         capTableFactory.updateCapTableImplementation(address(capTable));
-        console.log("CapTableFactory upgraded to:", address(capTableFactory));
 
         vm.stopBroadcast(); // End the transaction
     }
