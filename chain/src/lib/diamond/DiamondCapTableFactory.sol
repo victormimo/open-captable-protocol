@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import { Ownable } from "openzeppelin-contracts/contracts/access/Ownable.sol";
 import { Diamond } from "diamond-3-hardhat/Diamond.sol";
+import { LibDiamond } from "diamond-3-hardhat/libraries/LibDiamond.sol";
 import { DiamondCutFacet } from "diamond-3-hardhat/facets/DiamondCutFacet.sol";
+import { IDiamondCut } from "diamond-3-hardhat/interfaces/IDiamondCut.sol";
 import { IssuerFacet } from "./facets/IssuerFacet.sol";
 import { StakeholderFacet } from "./facets/StakeholderFacet.sol";
 import { StockClassFacet } from "./facets/StockClassFacet.sol";
@@ -11,10 +14,9 @@ import { ConvertiblesFacet } from "./facets/ConvertiblesFacet.sol";
 import { EquityCompensationFacet } from "./facets/EquityCompensationFacet.sol";
 import { StockPlanFacet } from "./facets/StockPlanFacet.sol";
 import { WarrantFacet } from "./facets/WarrantFacet.sol";
-import { IDiamondCut } from "diamond-3-hardhat/interfaces/IDiamondCut.sol";
+import { StakeholderNFTFacet } from "./facets/StakeholderNFTFacet.sol";
 import { DiamondCapTable } from "./DiamondCapTable.sol";
 import "forge-std/console.sol";
-import { StakeholderNFTFacet } from "./facets/StakeholderNFTFacet.sol";
 
 contract DiamondCapTableFactory {
     event CapTableCreated(address indexed capTable, bytes16 indexed issuerId);
@@ -34,20 +36,33 @@ contract DiamondCapTableFactory {
     address public immutable stakeholderNFTFacet;
 
     // Store facet cuts
-    IDiamondCut.FacetCut[] public facetCuts;
+    IDiamondCut.FacetCut[] internal facetCuts;
 
-    constructor() {
-        // Deploy all facets once
-        diamondCutFacet = address(new DiamondCutFacet());
-        issuerFacet = address(new IssuerFacet());
-        stakeholderFacet = address(new StakeholderFacet());
-        stockClassFacet = address(new StockClassFacet());
-        stockFacet = address(new StockFacet());
-        convertiblesFacet = address(new ConvertiblesFacet());
-        equityCompensationFacet = address(new EquityCompensationFacet());
-        stockPlanFacet = address(new StockPlanFacet());
-        warrantFacet = address(new WarrantFacet());
-        stakeholderNFTFacet = address(new StakeholderNFTFacet());
+    constructor(
+        address _diamondCutFacet,
+        address _issuerFacet,
+        address _stakeholderFacet,
+        address _stockClassFacet,
+        address _stockFacet,
+        address _convertiblesFacet,
+        address _equityCompensationFacet,
+        address _stockPlanFacet,
+        address _warrantFacet,
+        address _stakeholderNFTFacet
+    ) {
+        require(_diamondCutFacet != address(0), "Invalid diamondCut address");
+
+        // Set facet addresses
+        diamondCutFacet = _diamondCutFacet;
+        issuerFacet = _issuerFacet;
+        stakeholderFacet = _stakeholderFacet;
+        stockClassFacet = _stockClassFacet;
+        stockFacet = _stockFacet;
+        convertiblesFacet = _convertiblesFacet;
+        equityCompensationFacet = _equityCompensationFacet;
+        stockPlanFacet = _stockPlanFacet;
+        warrantFacet = _warrantFacet;
+        stakeholderNFTFacet = _stakeholderNFTFacet;
 
         // Initialize facet cuts array
         facetCuts = new IDiamondCut.FacetCut[](9);
@@ -129,10 +144,8 @@ contract DiamondCapTableFactory {
         });
 
         // StakeholderNFTFacet
-        bytes4[] memory stakeholderNFTSelectors = new bytes4[](2);
+        bytes4[] memory stakeholderNFTSelectors = new bytes4[](1);
         stakeholderNFTSelectors[0] = StakeholderNFTFacet.mint.selector;
-        stakeholderNFTSelectors[1] = StakeholderNFTFacet.getTokenURI.selector;
-
         facetCuts[8] = IDiamondCut.FacetCut({
             facetAddress: stakeholderNFTFacet,
             action: IDiamondCut.FacetCutAction.Add,
